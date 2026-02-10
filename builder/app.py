@@ -69,18 +69,24 @@ def _rsync(src: Path, dst: Path) -> str:
     return _run(["rsync", "-a", "--delete", f"{src}/", f"{dst}/"], cwd=src)
 
 
-def _safe_rmtree(path: Path, logs: list[str], context: str) -> None:
+def _safe_rmtree(path: Path, logs: list[str], warnings: list[str], context: str) -> None:
     if not path.exists():
         return
     try:
         shutil.rmtree(path)
     except OSError as e:
         if e.errno == errno.EBUSY:
-            logs.append(f"{context}: skipped busy path {path}: {e}")
+            msg = f"{context}: skipped busy path {path}: {e}"
+            logs.append(msg)
+            warnings.append(msg)
             return
-        logs.append(f"{context}: cleanup failed for {path}: {e}")
+        msg = f"{context}: cleanup failed for {path}: {e}"
+        logs.append(msg)
+        warnings.append(msg)
     except Exception as e:
-        logs.append(f"{context}: cleanup failed for {path}: {e}")
+        msg = f"{context}: cleanup failed for {path}: {e}"
+        logs.append(msg)
+        warnings.append(msg)
 
 
 def _write_manifest(work_dir: Path, started: float, finished: float, ok: bool, log: str) -> dict:
@@ -95,24 +101,26 @@ def _write_manifest(work_dir: Path, started: float, finished: float, ok: bool, l
     return manifest
 
 
-def _cleanup_old_tmp_dirs(tmp_root: Path, keep_builds: int, keep_ids: set[str], logs: list[str]) -> None:
+def _cleanup_old_tmp_dirs(
+    tmp_root: Path, keep_builds: int, keep_ids: set[str], logs: list[str], warnings: list[str]
+) -> None:
     build_dirs = sorted([p for p in tmp_root.glob("build-*") if p.is_dir()], key=lambda p: p.name, reverse=True)
     keep_names = {f"build-{x}" for x in keep_ids}
     keep_names.update({p.name for p in build_dirs[:max(keep_builds, 0)]})
     for d in build_dirs:
         if d.name in keep_names:
             continue
-        _safe_rmtree(d, logs, "cleanup-old-build")
+        _safe_rmtree(d, logs, warnings, "cleanup-old-build")
 
     for d in [p for p in tmp_root.glob("publish-*") if p.is_dir()]:
         if d.name in {f"publish-{x}" for x in keep_ids}:
             continue
-        _safe_rmtree(d, logs, "cleanup-old-publish")
+        _safe_rmtree(d, logs, warnings, "cleanup-old-publish")
 
 
-def _publish(stage_dir: Path, public_dir: Path, prev_dir: Path, logs: list[str]) -> str:
+def _publish(stage_dir: Path, public_dir: Path, prev_dir: Path, logs: list[str], warnings: list[str]) -> str:
     PREV_ROOT.mkdir(parents=True, exist_ok=True)
-    _safe_rmtree(prev_dir, logs, "prepare-prev")
+    _safe_rmtree(prev_dir, logs, warnings, "prepare-prev")
     prev_dir.mkdir(parents=True, exist_ok=True)
 
     if public_dir.exists():
@@ -157,6 +165,7 @@ def build():
     work_dir = TMP_ROOT / f"build-{build_id}"
     stage_dir = TMP_ROOT / f"publish-{build_id}"
     logs: list[str] = []
+    cleanup_warnings: list[str] = []
 
     try:
         if not SRC_ROOT.exists():
@@ -185,11 +194,11 @@ def build():
         logs.append("staging publish dir via rsync")
         logs.append(_rsync(work_dir, stage_dir))
 
-        publish_mode = _publish(stage_dir, PUBLIC_DIR, PREV_DIR, logs)
+        publish_mode = _publish(stage_dir, PUBLIC_DIR, PREV_DIR, logs, cleanup_warnings)
 
-        _safe_rmtree(work_dir, logs, "cleanup-work")
-        _safe_rmtree(stage_dir, logs, "cleanup-stage")
-        _cleanup_old_tmp_dirs(TMP_ROOT, KEEP_BUILDS, {build_id}, logs)
+        _safe_rmtree(work_dir, logs, cleanup_warnings, "cleanup-work")
+        _safe_rmtree(stage_dir, logs, cleanup_warnings, "cleanup-stage")
+        _cleanup_old_tmp_dirs(TMP_ROOT, KEEP_BUILDS, {build_id}, logs, cleanup_warnings)
 
         full_log = "\n".join([x for x in logs if x])
         return {
@@ -201,15 +210,16 @@ def build():
             "stage_dir": str(stage_dir),
             "publish_mode": publish_mode,
             "duration_sec": round(time.time() - started, 3),
+            "cleanup_warnings": cleanup_warnings,
             "stdout_stderr": full_log,
             "log_tail": full_log[-4000:],
             "manifest": manifest,
         }
 
     except Exception as e:
-        _safe_rmtree(stage_dir, logs, "error-cleanup-stage")
-        _safe_rmtree(work_dir, logs, "error-cleanup-work")
-        _cleanup_old_tmp_dirs(TMP_ROOT, KEEP_BUILDS, {build_id}, logs)
+        _safe_rmtree(stage_dir, logs, cleanup_warnings, "error-cleanup-stage")
+        _safe_rmtree(work_dir, logs, cleanup_warnings, "error-cleanup-work")
+        _cleanup_old_tmp_dirs(TMP_ROOT, KEEP_BUILDS, {build_id}, logs, cleanup_warnings)
 
         logs.append(f"error: {e}")
         full_log = "\n".join([x for x in logs if x]).strip()
@@ -222,6 +232,7 @@ def build():
                 "build_id": build_id,
                 "work_dir": str(work_dir),
                 "stage_dir": str(stage_dir),
+                "cleanup_warnings": cleanup_warnings,
                 "log_tail": full_log[-4000:],
             },
         )

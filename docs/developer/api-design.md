@@ -17,11 +17,9 @@
   - Error response (HTTP 500):
     ```json
     {
-      "detail": {
-        "ok": false,
-        "error": "...",
-        "log_tail": "..."
-      }
+      "ok": false,
+      "error": "...",
+      "log_tail": "..."
     }
     ```
 
@@ -49,7 +47,10 @@
 - `POST /api/setup/theme` - apply/update starter theme assets and marker.
 - `POST /api/setup/theme/install` - clone or update an allowlisted external theme and set Hugo `theme`.
   - Request body: `{ "theme_id": "papermod-reference", "ref": "optional-tag-or-branch" }`
+  - Arbitrary `repo_url` is blocked by default and requires `ALLOW_UNSAFE_THEME_URLS=true`.
+  - `theme_dir` is sanitized and restricted to `[a-z0-9_-]`.
   - Response includes `license`, `repo_url`, `theme_dir`, `commit`, and install logs.
+- `GET /themes/installed` / `GET /api/themes/installed` - read installed theme manifest with detected license info.
 - `POST /api/build` - proxy to builder.
 
 ## Error Handling Format

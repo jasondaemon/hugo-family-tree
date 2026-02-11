@@ -22,15 +22,17 @@ Networking:
 - `hugo-builder` is internal only (default network).
 
 ## Build Pipeline
-- Builder creates a unique work directory per run: `/public_tmp/build-<timestamp>-<rand>`.
+- Builder treats `TMP_DIR` as the mount base (default `/public_tmp`) and uses an internal child root: `/public_tmp/hugo-family-tree`.
+- Builder creates a unique work directory per run: `/public_tmp/hugo-family-tree/build-<timestamp>-<rand>`.
 - Hugo outputs into that work directory (never into `/public_tmp` mount root directly).
-- Builder stages publish content into `/public_tmp/publish-<timestamp>-<rand>`.
+- Builder stages publish content into `/public_tmp/hugo-family-tree/publish-<timestamp>-<rand>`.
 - Builder snapshots current `/public` to `/public_prev/_prev` via `rsync -a --delete`.
 - Publish step:
   - Tries rename swap when filesystem/mount conditions allow.
   - Falls back to `rsync -a --delete` from stage to `/public` when rename is unsafe or not possible.
+- Builder checks that temp root and public target are on the same filesystem before swap.
 - Cleanup is best-effort; if NFS returns `EBUSY`, cleanup is skipped and logged without failing the build.
-- A service lock file is stored on writable temp storage: `/public_tmp/.hugo_build.lock`.
+- A service lock file is stored in the managed temp root: `/public_tmp/hugo-family-tree/.build.lock`.
 
 ## Quick Start
 ### 1) Create NFS directories
@@ -66,6 +68,7 @@ docker compose up -d --build
   - Access List: `internal`
 
 ## Documentation
+- `CHANGELOG.md`
 - `docs/architecture.md`
 - `docs/deployment.md`
 - `docs/security.md`

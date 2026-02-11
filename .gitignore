@@ -1,0 +1,23 @@
+src/
+public/
+public_tmp/
+public_prev/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100/
+.Trashes/
+.fseventsd
+
+# Synology / NAS metadata
+@eaDir/
+#recycle/
+.SynologyWorkingDirectory/
+.@__thumb/

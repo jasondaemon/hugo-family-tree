@@ -40,3 +40,9 @@
 ### Logging
 - Log build status and errors.
 - Avoid logging sensitive content.
+
+
+## Public Repository Hygiene
+- Do not commit personal/private source archives, secrets, or exported credentials.
+- Keep runtime content directories (`src/`, `public/`, `public_tmp/`, `public_prev/`) out of git.
+- Import jobs should read from archive paths and write to runtime content, not tracked source files.

@@ -23,6 +23,10 @@ The front matter must follow the schema exactly. The admin UI and API validate a
 - `vitals.born` and `vitals.died` accept partial ISO dates: `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`.
 - `birth_place`, `death_place`, `burial_place`, `cause_of_death` are free text.
 
+### Story
+- `story_md` stores the long-form person narrative (Markdown).
+- Authored in admin WYSIWYG and rendered as markdown on the website.
+
 ### Relationships
 - `relations.parents.father` / `relations.parents.mother`: `person_id` references.
 - `relations.spouses`: list of spouse entries with dates/places.
@@ -45,6 +49,12 @@ A structured way to record certainty: `identity`, `vitals`, `parents`, plus free
 
 ### Provenance
 Tracks the origin of the record, e.g. WordPress import.
+
+### Timeline
+- `timeline[]` stores person-specific timeline entries.
+- Each event supports: `start_date`, `end_date`, `title`, `event_type`, `location`, `story_md`, `media[]`, `source_refs[]`, `related_people[]`, `sort_weight`.
+- Event dates accept partial ISO format.
+- If both event dates exist, `end_date` must not be earlier than `start_date`.
 
 ## Relationship Modeling
 - All relationship values are stored as `person_id` references.

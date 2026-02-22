@@ -7,6 +7,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 ## [Unreleased]
 
 ### Added
+- Added canonical global events schema and API surface (`/api/global-events`, `/api/schema/global-event`).
+- Added person `story_md` and structured `timeline[]` support in canonical person schema.
 - Added builder `cleanup_warnings` in build responses for non-fatal cleanup issues.
 - Added installed-theme manifest storage at `/src/.hft/themes-installed.json`.
 - Added read-only installed-theme endpoint:
@@ -15,6 +17,7 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Admin API now includes dedicated global-events CRUD endpoints for public timeline architecture.
 - Builder now treats `TMP_DIR` as a base mount and uses a managed child temp root:
   - `/public_tmp/hugo-family-tree`
 - Builder now keeps lock files under managed temp root:
@@ -29,6 +32,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
   - `ALLOW_UNSAFE_THEME_URLS=true`
 
 ### Documentation
+- Updated docs for public-repo exposure hygiene and runtime-content git ignore policy.
+- Added `docs/schema/global-events.md` for timeline/global event model contract.
 - Updated `README.md` build pipeline notes for managed temp root and same-filesystem requirement.
 - Updated `docs/storage.md` with `TMP_DIR`/`PUBLIC_DIR` atomic-swap requirement.
 - Updated `docs/troubleshooting.md` for mount-safe temp behavior and expected response fields.

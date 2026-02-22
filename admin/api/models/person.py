@@ -145,6 +145,36 @@ class Provenance(BaseModel):
     wp_type: str = ""
 
 
+class TimelineMedia(BaseModel):
+    file: str = ""
+    type: str = "photo"
+    title: str = ""
+    caption: str = ""
+
+    @field_validator("file")
+    @classmethod
+    def validate_file(cls, value: str) -> str:
+        return _validate_media_path(value)
+
+
+class TimelineEvent(BaseModel):
+    start_date: str = ""
+    end_date: str = ""
+    title: str = ""
+    event_type: str = ""
+    location: str = ""
+    story_md: str = ""
+    media: List[TimelineMedia] = Field(default_factory=list)
+    source_refs: List[str] = Field(default_factory=list)
+    related_people: List[str] = Field(default_factory=list)
+    sort_weight: int = 0
+
+    @field_validator("start_date", "end_date")
+    @classmethod
+    def validate_date(cls, value: str) -> str:
+        return _validate_partial_date(value)
+
+
 class PersonRecord(BaseModel):
     title: str = ""
     date: str = ""
@@ -161,6 +191,8 @@ class PersonRecord(BaseModel):
     sources: List[Source] = Field(default_factory=list)
     confidence: Confidence = Field(default_factory=Confidence)
     provenance: Provenance = Field(default_factory=Provenance)
+    story_md: str = ""
+    timeline: List[TimelineEvent] = Field(default_factory=list)
 
     @field_validator("person_id")
     @classmethod
@@ -189,4 +221,7 @@ class PersonRecord(BaseModel):
         keys = [s.key for s in self.sources if s.key]
         if len(keys) != len(set(keys)):
             raise ValueError("sources.key must be unique within a record")
+        for event in self.timeline:
+            if event.start_date and event.end_date and event.end_date < event.start_date:
+                raise ValueError("timeline end_date cannot be before start_date")
         return self

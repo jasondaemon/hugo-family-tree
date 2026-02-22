@@ -67,6 +67,12 @@ docker compose up -d --build
   - Forward to: `hugo-family-tree-admin:80`
   - Access List: `internal`
 
+
+## Public Exposure Notes
+- This is a public open-source project; keep secrets and private data out of git.
+- Runtime content and outputs are intentionally not committed: `src/`, `public/`, `public_tmp/`, `public_prev/`.
+- Admin should remain access-restricted; only `public-web` should be internet-facing.
+
 ## Documentation
 - `CHANGELOG.md`
 - `docs/architecture.md`
@@ -75,6 +81,7 @@ docker compose up -d --build
 - `docs/storage.md`
 - `docs/licensing.md`
 - `docs/schema/person.md`
+- `docs/schema/global-events.md`
 - `docs/troubleshooting.md`
 
 ## License

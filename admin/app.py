@@ -19,12 +19,14 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import ValidationError
 
+from api.models.global_event import GlobalEventRecord
 from api.models.person import PersonRecord, MediaItem
 
 app = FastAPI()
 
 SRC_ROOT = Path(os.getenv("SRC_ROOT", "/src"))
 CONTENT_ROOT = SRC_ROOT / "content" / "family"
+GLOBAL_EVENTS_ROOT = SRC_ROOT / "content" / "global-events"
 STATIC_DIR = Path(__file__).parent / "static"
 BUILD_ENDPOINT = os.getenv("BUILD_ENDPOINT", "http://hugo-builder:19000/build")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://example.com")
@@ -255,6 +257,12 @@ title: "Family"
 ---
 
 Family records live here.
+""",
+        "content/global-events/_index.md": """---
+title: "Global Events"
+---
+
+Global historical events live here.
 """,
     }
 
@@ -525,6 +533,57 @@ def _find_person_path_by_slug(slug: str) -> Path | None:
     return None
 
 
+def _global_event_slug(value: str) -> str:
+    slug = _slugify(value)
+    if not slug:
+        slug = f"event-{uuid.uuid4().hex[:10]}"
+    return slug
+
+
+def _global_event_index(slug: str) -> Path:
+    safe = re.sub(r"[^a-zA-Z0-9\-_]+", "-", slug).strip("-").lower()
+    if not safe:
+        raise HTTPException(400, "global event slug is invalid")
+    return GLOBAL_EVENTS_ROOT / safe / "index.md"
+
+
+def _list_global_events() -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    if not GLOBAL_EVENTS_ROOT.exists():
+        return items
+    for md in GLOBAL_EVENTS_ROOT.rglob("index.md"):
+        data, body = _read_person(md)
+        data = dict(data or {})
+        if "story_md" not in data and body:
+            data["story_md"] = body
+        if not data.get("slug"):
+            data["slug"] = md.parent.name
+        try:
+            record = GlobalEventRecord.model_validate(data)
+        except ValidationError:
+            continue
+        payload = record.model_dump()
+        payload["path"] = str(md.relative_to(SRC_ROOT))
+        items.append(payload)
+    items.sort(key=lambda x: ((x.get("start_date") or ""), (x.get("title") or "").lower()))
+    return items
+
+
+def _find_global_event_path(slug: str) -> Path | None:
+    slug = (slug or "").strip().lower()
+    if not slug:
+        return None
+    path = _global_event_index(slug)
+    return path if path.exists() else None
+
+
+def _write_global_event(path: Path, data: dict[str, Any]) -> None:
+    payload = dict(data)
+    story = str(payload.pop("story_md", "") or "")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _write_person(path, payload, story)
+
+
 def _person_ids() -> set[str]:
     return {p["person_id"] for p in _list_people()}
 
@@ -634,6 +693,10 @@ def _normalize_payload(payload: dict[str, Any], existing: dict[str, Any] | None 
     data.setdefault("sources", [])
     data.setdefault("confidence", {})
     data.setdefault("provenance", {})
+    if "story_md" not in data:
+        data["story_md"] = existing.get("story_md", "") if existing else ""
+    if "timeline" not in data:
+        data["timeline"] = existing.get("timeline", []) if existing else []
     return data
 
 
@@ -817,6 +880,11 @@ def health():
 def api_person_schema():
     return {"ok": True, "schema": PersonRecord.model_json_schema()}
 
+
+@app.get("/api/schema/global-event")
+def api_global_event_schema():
+    return {"ok": True, "schema": GlobalEventRecord.model_json_schema()}
+
 @app.get("/api/setup/status")
 def api_setup_status():
     config = _find_hugo_config(SRC_ROOT)
@@ -881,6 +949,105 @@ async def api_setup_theme_install(request: Request):
 @app.get("/api/themes/installed")
 def api_themes_installed():
     return {"ok": True, "themes": _manifest_read()}
+
+
+@app.get("/api/global-events")
+def api_global_events(query: str | None = None):
+    events = _list_global_events()
+    if query:
+        q = query.lower()
+        events = [
+            e
+            for e in events
+            if q in (e.get("title", "").lower())
+            or q in (e.get("event_type", "").lower())
+            or q in (e.get("location", "").lower())
+            or q in (e.get("story_md", "").lower())
+            or any(q in str(t).lower() for t in (e.get("tags") or []))
+        ]
+    return {"ok": True, "events": events}
+
+
+@app.get("/api/global-events/{slug}")
+def api_global_event(slug: str):
+    path = _find_global_event_path(slug)
+    if not path or not path.exists():
+        raise HTTPException(404, f"Global event not found: {slug}")
+    data, body = _read_person(path)
+    if "story_md" not in data and body:
+        data["story_md"] = body
+    data.setdefault("slug", path.parent.name)
+    try:
+        record = GlobalEventRecord.model_validate(data)
+    except ValidationError as e:
+        raise HTTPException(400, e.errors())
+    payload = record.model_dump()
+    payload["path"] = str(path.relative_to(SRC_ROOT))
+    return {"ok": True, "event": payload}
+
+
+@app.post("/api/global-events")
+async def api_create_global_event(request: Request):
+    payload = await request.json()
+    if not isinstance(payload, dict):
+        raise HTTPException(400, "Invalid JSON body")
+    payload = dict(payload)
+    slug = _global_event_slug(str(payload.get("slug") or payload.get("title") or ""))
+    payload["slug"] = slug
+    if not payload.get("end_date") and payload.get("start_date"):
+        payload["end_date"] = payload.get("start_date")
+
+    try:
+        record = GlobalEventRecord.model_validate(payload)
+    except ValidationError as e:
+        raise HTTPException(400, e.errors())
+
+    index_path = _global_event_index(record.slug)
+    if index_path.exists():
+        raise HTTPException(400, f"Global event already exists: {record.slug}")
+    _write_global_event(index_path, record.model_dump())
+    return {"ok": True, "slug": record.slug, "path": str(index_path.relative_to(SRC_ROOT))}
+
+
+@app.put("/api/global-events/{slug}")
+async def api_update_global_event(slug: str, request: Request):
+    payload = await request.json()
+    if not isinstance(payload, dict):
+        raise HTTPException(400, "Invalid JSON body")
+
+    path = _find_global_event_path(slug)
+    if not path or not path.exists():
+        raise HTTPException(404, f"Global event not found: {slug}")
+
+    existing, body = _read_person(path)
+    payload = dict(payload)
+    if "story_md" not in payload and body:
+        payload["story_md"] = body
+    if "slug" in payload and payload.get("slug") != slug:
+        raise HTTPException(400, "slug is immutable once created")
+    payload["slug"] = slug
+    payload.setdefault("title", existing.get("title", ""))
+    payload.setdefault("start_date", existing.get("start_date", ""))
+    payload.setdefault("end_date", existing.get("end_date", ""))
+    payload.setdefault("event_type", existing.get("event_type", "historical"))
+    payload.setdefault("location", existing.get("location", ""))
+    payload.setdefault("story_md", existing.get("story_md", ""))
+    payload.setdefault("media", existing.get("media", []))
+    payload.setdefault("sources", existing.get("sources", []))
+    payload.setdefault("tags", existing.get("tags", []))
+    payload.setdefault("featured", existing.get("featured", ""))
+    payload.setdefault("draft", bool(existing.get("draft", False)))
+
+    if not payload.get("end_date") and payload.get("start_date"):
+        payload["end_date"] = payload.get("start_date")
+
+    try:
+        record = GlobalEventRecord.model_validate(payload)
+    except ValidationError as e:
+        raise HTTPException(400, e.errors())
+
+    _write_global_event(path, record.model_dump())
+    return {"ok": True, "slug": record.slug}
 
 
 @app.get("/people/list")

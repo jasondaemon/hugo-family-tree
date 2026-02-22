@@ -29,6 +29,8 @@
 - Read endpoints do not mutate state.
 
 ### Admin Endpoints
+- `GET /api/schema/person` - JSON Schema for person records.
+- `GET /api/schema/global-event` - JSON Schema for global events.
 - `GET /people/list` - lightweight index (used by relationship dropdowns).
 - `GET /people/search?q=` - search by name/aliases.
 - `GET /api/people` - list/search people (full payload).
@@ -37,6 +39,10 @@
 - `POST /people` - create a new person bundle (UUID assigned server-side).
 - `PUT /people/{person_id}` - update an existing record.
 - `POST /api/people/{person_id}/media` - upload media into the bundle gallery.
+- `GET /api/global-events` - list/search global historical events.
+- `GET /api/global-events/{slug}` - load one global event.
+- `POST /api/global-events` - create global event.
+- `PUT /api/global-events/{slug}` - update global event (slug immutable).
 - `GET /api/setup/status` - setup status and current starter theme.
 - `GET /api/setup/themes` - curated starter theme catalog.
   - Includes metadata such as `name`, `description`, `license`, `demo_url`, `repo_url`, `selectable`, and `installable`.
@@ -55,4 +61,5 @@
 
 ## Error Handling Format
 - Errors return non-2xx status codes with a JSON `detail` or `error` string.
+- Builder errors are returned as top-level JSON (`ok`, `error`, `log_tail`) for admin display.
 - Validation errors return a list of structured error objects.

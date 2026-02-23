@@ -47,6 +47,23 @@ function layout(html) {
   app.innerHTML = `<div class="panel">${html}</div>`;
 }
 
+function showToast(message, timeout = 2600) {
+  if (!message) return;
+  let toast = document.getElementById("app-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "app-toast";
+    toast.className = "app-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("show");
+  window.clearTimeout(showToast._timer);
+  showToast._timer = window.setTimeout(() => {
+    toast.classList.remove("show");
+  }, timeout);
+}
+
 async function renderHome() {
   let status = { configured: true, theme_id: "" };
   let themes = [];
@@ -274,12 +291,12 @@ function renderPeopleList() {
   const notice = sessionStorage.getItem("people_notice") || "";
   if (notice) {
     sessionStorage.removeItem("people_notice");
+    showToast(notice);
   }
 
   layout(`
     <h2>People</h2>
     <p class="muted">Use the left sidebar to search and open a person record.</p>
-    ${notice ? `<div class="notice-box">${escapeHtml(notice)}</div>` : ""}
   `);
 
   mountPeopleWorkspace("list");
@@ -1012,6 +1029,7 @@ function renderPersonForm(person, mode) {
         await fetchJson(`/people/${encodeURIComponent(record.person_id)}`, { method: "DELETE" });
         localStorage.removeItem(draftKey);
         sessionStorage.setItem("people_notice", "Person deleted.");
+        sessionStorage.setItem("deleted_person_id", record.person_id);
         window.location.href = "/people";
       } catch (err) {
         errorBox.hidden = false;
@@ -1976,6 +1994,14 @@ async function render() {
   const path = window.location.pathname;
   if (path.startsWith("/people")) {
     await loadPeople();
+
+    const deletedPersonId = sessionStorage.getItem("deleted_person_id") || "";
+    if (deletedPersonId) {
+      state.people = (state.people || []).filter((p) => p.person_id !== deletedPersonId);
+      state.peopleIndex = new Map(state.people.map((p) => [p.person_id, p]));
+      sessionStorage.removeItem("deleted_person_id");
+    }
+
     if (path === "/people") {
       renderPeopleList();
       return;

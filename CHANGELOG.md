@@ -20,6 +20,7 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Switched people-page status notices to a fixed overlay toast so UI messages do not shift content.
 - Improved relationship remove actions to use robust click handling and show in-form feedback notices before save.
 - Added relationship management controls for children/siblings in admin UI (`Remove Selected`, `Clear All`).
 - Added person delete endpoint and admin UI action to delete a person record and scrub relationship references across people/global-events.

@@ -1150,6 +1150,7 @@ def api_people_list():
             "died": p["died"],
             "slug": p.get("slug", ""),
             "names": p.get("names", {}),
+            "tags": p.get("tags", []),
         }
         for p in people
     ]

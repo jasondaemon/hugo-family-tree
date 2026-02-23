@@ -20,6 +20,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Replaced the admin People sidebar search with compact surname/tag filtering: text search + lightweight word-cloud style tag toggles (same family-tag filter model, minimal vertical footprint).
+
 - Person schema and admin editor now support married names (`names.married[]`) and custom person tags (`tags[]`) for surname/tag-based discovery.
 - People search APIs now match on married names, maiden names, and custom tags in addition to full/given/surname/AKA.
 - Family page now includes a consumer-style filter bar with searchable chips and text search over parsed surname tags + custom tags.

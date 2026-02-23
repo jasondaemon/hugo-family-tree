@@ -508,6 +508,57 @@ button.secondary {
   overflow: hidden;
 }
 
+
+.people-filter-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+#people-nav-filter {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-family: "Source Sans Pro", "Helvetica", sans-serif;
+  font-size: 13px;
+}
+
+.people-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  max-height: 92px;
+  overflow: auto;
+  padding: 2px 1px;
+}
+
+.people-tag {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  font-family: "Source Sans Pro", "Helvetica", sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.people-tag span {
+  opacity: 0.75;
+  font-size: 11px;
+}
+
+.people-tag:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.people-tag.active {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .people-nav-links {
   display: grid;
   gap: 6px;

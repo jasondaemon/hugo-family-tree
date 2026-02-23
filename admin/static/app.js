@@ -316,19 +316,41 @@ function buildPeopleSidebar(activeKey = "") {
       const label = personSidebarLabel(p);
       const key = p.slug || p.person_id;
       const active = key === activeKey ? "active" : "";
-      return `<a class="people-nav-link ${active}" data-person-label="${escapeHtml(label.toLowerCase())}" href="${peopleLinkTarget(p)}">${escapeHtml(label)}</a>`;
+      const tags = (p.tags || []).map((t) => String(t || "").toLowerCase()).filter(Boolean);
+      return `<a class="people-nav-link ${active}" data-person-label="${escapeHtml(label.toLowerCase())}" data-tags="${escapeHtml(tags.join("|"))}" href="${peopleLinkTarget(p)}">${escapeHtml(label)}</a>`;
     })
+    .join("");
+
+  const tagCounts = new Map();
+  people.forEach((p) => {
+    (p.tags || []).forEach((tag) => {
+      const t = String(tag || "").toLowerCase().trim();
+      if (!t) return;
+      tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
+    });
+  });
+
+  const topTags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 16)
+    .map(([tag, count]) => `<button type="button" class="people-tag" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)} <span>${count}</span></button>`)
     .join("");
 
   return `
     <aside class="people-nav">
       <a href="/people/new" class="people-add-btn">New Person</a>
-      <label for="people-nav-filter">Search People</label>
-      <input id="people-nav-filter" type="text" placeholder="Filter by name or year..." />
+      <div class="people-filter-wrap">
+        <input id="people-nav-filter" type="search" placeholder="Filter name or tag..." autocomplete="off" />
+        <div id="people-tag-cloud" class="people-tag-cloud">
+          <button type="button" class="people-tag active" data-tag="">all</button>
+          ${topTags}
+        </div>
+      </div>
       <nav id="people-nav-links" class="people-nav-links">${items || '<p class="muted">No people found.</p>'}</nav>
     </aside>
   `;
 }
+
 
 function mountPeopleWorkspace(activeKey = "") {
   const panel = app.querySelector(":scope > .panel");
@@ -353,15 +375,34 @@ function mountPeopleWorkspace(activeKey = "") {
 
   const filterInput = document.getElementById("people-nav-filter");
   const links = Array.from(document.querySelectorAll("#people-nav-links .people-nav-link"));
-  if (filterInput) {
-    filterInput.addEventListener("input", () => {
-      const q = (filterInput.value || "").trim().toLowerCase();
-      links.forEach((link) => {
-        const label = link.getAttribute("data-person-label") || "";
-        link.hidden = q ? !label.includes(q) : false;
-      });
+  const tagButtons = Array.from(document.querySelectorAll("#people-tag-cloud .people-tag"));
+  let activeTag = "";
+
+  function applyPeopleFilter() {
+    const q = (filterInput?.value || "").trim().toLowerCase();
+    const terms = q ? q.split(/\s+/).filter(Boolean) : [];
+    links.forEach((link) => {
+      const label = link.getAttribute("data-person-label") || "";
+      const tags = (link.getAttribute("data-tags") || "").split("|").filter(Boolean);
+      const tagMatch = !activeTag || tags.includes(activeTag);
+      const textMatch =
+        terms.length === 0 || terms.every((term) => label.includes(term) || tags.some((t) => t.includes(term)));
+      link.hidden = !(tagMatch && textMatch);
     });
   }
+
+  if (filterInput) {
+    filterInput.addEventListener("input", applyPeopleFilter);
+  }
+
+  tagButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tag = btn.getAttribute("data-tag") || "";
+      activeTag = activeTag === tag ? "" : tag;
+      tagButtons.forEach((b) => b.classList.toggle("active", (b.getAttribute("data-tag") || "") === activeTag || (activeTag === "" && (b.getAttribute("data-tag") || "") === "")));
+      applyPeopleFilter();
+    });
+  });
 }
 
 

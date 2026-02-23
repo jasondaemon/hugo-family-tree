@@ -6,6 +6,11 @@
   {{ end }}
 {{ end }}
 {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
+{{ $sex := .Params.sex | default "U" }}
+{{ $fallbackPortrait := "/img/male.png" }}
+{{ if eq $sex "F" }}
+  {{ $fallbackPortrait = "/img/female.png" }}
+{{ end }}
 
 {{ $timeline := .Params.timeline }}
 {{ $hasTimeline := gt (len $timeline) 0 }}
@@ -28,7 +33,7 @@
       {{ with $featuredRes }}
         <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait">
       {{ else }}
-        <div class="portrait-placeholder">No portrait</div>
+        <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
       {{ end }}
     </div>
   </header>

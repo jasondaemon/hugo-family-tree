@@ -7,13 +7,16 @@
       {{ $featuredPath := "" }}
       {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
       {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
+      {{ $sex := .Params.sex | default "U" }}
+      {{ $fallbackPortrait := "/img/male.png" }}
+      {{ if eq $sex "F" }}{{ $fallbackPortrait = "/img/female.png" }}{{ end }}
       <article class="family-card">
         <a class="family-card-link" href="{{ .RelPermalink }}">
           <div class="family-card-image">
             {{ with $featuredRes }}
               <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait">
             {{ else }}
-              <div class="portrait-placeholder">No portrait</div>
+              <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
             {{ end }}
           </div>
           <div class="family-card-body">

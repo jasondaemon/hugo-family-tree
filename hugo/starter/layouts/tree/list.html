@@ -14,6 +14,9 @@
         {{ $featuredPath := "" }}
         {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
         {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
+      {{ $sex := .Params.sex | default "U" }}
+      {{ $fallbackPortrait := "/img/male.png" }}
+      {{ if eq $sex "F" }}{{ $fallbackPortrait = "/img/female.png" }}{{ end }}
         {{ $full := .Params.names.full | default .Title }}
         {{ $born := .Params.vitals.born | default "????" }}
         {{ $died := .Params.vitals.died | default "????" }}
@@ -21,9 +24,9 @@
           <a class="tree-main" href="{{ .RelPermalink }}">
             <div class="tree-avatar">
               {{ with $featuredRes }}
-                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait">
+                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
               {{ else }}
-                <div class="portrait-placeholder">No portrait</div>
+                <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
               {{ end }}
             </div>
             <div class="tree-main-body">

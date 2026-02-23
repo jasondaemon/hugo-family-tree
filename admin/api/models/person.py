@@ -7,7 +7,7 @@ from typing import List
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 ISO_PARTIAL_RE = re.compile(r"^\d{4}(-\d{2})?(-\d{2})?$")
-SAFE_PATH_RE = re.compile(r"^[a-zA-Z0-9/_\-.]+$")
+SAFE_PATH_RE = re.compile(r"^[^\x00-\x1f\x7f<>:\"|?*]+$")
 PERSON_ID_RE = re.compile(r"^[a-f0-9\\-]{36}$")
 
 
@@ -22,6 +22,7 @@ def _validate_partial_date(value: str) -> str:
 def _validate_media_path(value: str) -> str:
     if not value:
         return value
+    value = value.replace("\u202f", " ").replace("\u00a0", " ").strip()
     if value.startswith("/"):
         raise ValueError("Media paths must be bundle-relative")
     if ".." in value.replace("\\", "/"):

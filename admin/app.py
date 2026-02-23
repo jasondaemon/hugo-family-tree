@@ -104,6 +104,11 @@ THEME_PRESETS: dict[str, dict[str, str]] = {
 THEME_DIR_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 
 
+def _validation_errors(exc: ValidationError) -> list[dict[str, Any]]:
+    # Use Pydantic JSON output to avoid non-serializable ctx values in errors().
+    return json.loads(exc.json())
+
+
 def _split_front_matter(text: str) -> tuple[dict[str, Any], str]:
     if text.startswith("---"):
         match = re.match(r"^---\s*\n(.*?)\n---\s*\n?(.*)$", text, re.S)
@@ -1025,7 +1030,7 @@ def api_global_event(slug: str):
     try:
         record = GlobalEventRecord.model_validate(data)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
     payload = record.model_dump()
     payload["path"] = str(path.relative_to(SRC_ROOT))
     return {"ok": True, "event": payload}
@@ -1045,7 +1050,7 @@ async def api_create_global_event(request: Request):
     try:
         record = GlobalEventRecord.model_validate(payload)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     index_path = _global_event_index(record.slug)
     if index_path.exists():
@@ -1089,7 +1094,7 @@ async def api_update_global_event(slug: str, request: Request):
     try:
         record = GlobalEventRecord.model_validate(payload)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     _write_global_event(path, record.model_dump())
     return {"ok": True, "slug": record.slug}
@@ -1161,7 +1166,7 @@ def api_person(person_id: str):
     try:
         record = PersonRecord.model_validate(data)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     payload = record.model_dump(by_alias=True)
     payload["body"] = body or ""
@@ -1179,7 +1184,7 @@ def api_person_by_slug(slug: str):
     try:
         record = PersonRecord.model_validate(data)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     payload = record.model_dump(by_alias=True)
     payload["body"] = body or ""
@@ -1201,7 +1206,7 @@ async def api_create_person(request: Request):
     try:
         record = PersonRecord.model_validate(payload)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     if not record.slug:
         record = record.model_copy(update={"slug": ""})
@@ -1255,7 +1260,7 @@ async def api_update_person(person_id: str, request: Request):
     try:
         record = PersonRecord.model_validate(payload)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     if not record.slug:
         record = record.model_copy(update={"slug": ""})
@@ -1325,7 +1330,7 @@ async def api_upload_media(
     try:
         record = PersonRecord.model_validate(data)
     except ValidationError as e:
-        raise HTTPException(400, e.errors())
+        raise HTTPException(400, _validation_errors(e))
 
     bundle_dir = path.parent
     gallery_dir = bundle_dir / "gallery"

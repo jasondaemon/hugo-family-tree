@@ -382,17 +382,22 @@ function mountPeopleWorkspace(activeKey = "") {
     const q = (filterInput?.value || "").trim().toLowerCase();
     const terms = q ? q.split(/\s+/).filter(Boolean) : [];
     links.forEach((link) => {
-      const label = link.getAttribute("data-person-label") || "";
-      const tags = (link.getAttribute("data-tags") || "").split("|").filter(Boolean);
+      const label = (link.textContent || "").toLowerCase();
+      const tags = (link.getAttribute("data-tags") || "")
+        .toLowerCase()
+        .split("|")
+        .map((x) => x.trim())
+        .filter(Boolean);
       const tagMatch = !activeTag || tags.includes(activeTag);
       const textMatch =
         terms.length === 0 || terms.every((term) => label.includes(term) || tags.some((t) => t.includes(term)));
-      link.hidden = !(tagMatch && textMatch);
+      link.style.display = tagMatch && textMatch ? "" : "none";
     });
   }
 
   if (filterInput) {
     filterInput.addEventListener("input", applyPeopleFilter);
+    filterInput.addEventListener("keyup", applyPeopleFilter);
   }
 
   tagButtons.forEach((btn) => {

@@ -645,12 +645,28 @@ button.danger:hover {
 
 .relation-add-row {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 6px;
   margin-top: 6px;
   margin-bottom: 6px;
+  align-items: end;
+}
+
+.relation-add-row .search-input,
+.relation-add-row select {
+  margin: 0;
 }
 
 .relation-add-row .link-button {
-  justify-self: start;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .relation-add-row {
+    grid-template-columns: 1fr;
+  }
+
+  .relation-add-row .link-button {
+    justify-self: start;
+  }
 }

@@ -20,6 +20,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Polished children/siblings add-link controls with tighter responsive layout (search + picker + add action in one compact row on desktop).
+
 - Reworked children/siblings editor UX to prevent false "reappearing" links: relationship boxes now show only linked people, with separate add-from-search controls and deterministic save payloads.
 
 - Replaced the admin People sidebar search with compact surname/tag filtering: text search + lightweight word-cloud style tag toggles (same family-tag filter model, minimal vertical footprint).

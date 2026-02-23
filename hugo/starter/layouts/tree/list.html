@@ -11,6 +11,7 @@
   <div class="tree-grid" id="tree-grid">
     {{ range site.RegularPages.ByTitle }}
       {{ if eq .Section "family" }}
+        {{ $person := . }}
         {{ $featuredPath := "" }}
         {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
         {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
@@ -24,9 +25,12 @@
           <a class="tree-main" href="{{ .RelPermalink }}">
             <div class="tree-avatar">
               {{ with $featuredRes }}
-                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
+                {{ $portraitKey := $person.Params.person_id | default $person.File.TranslationBaseName }}
+                {{ $portraitTarget := printf "img/portraits/%s%s" $portraitKey (path.Ext .Name) }}
+                {{ $portrait := resources.Copy $portraitTarget . }}
+                <img src="{{ $portrait.RelPermalink }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
               {{ else }}
-                <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
+                <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
               {{ end }}
             </div>
             <div class="tree-main-body">

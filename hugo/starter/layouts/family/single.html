@@ -31,9 +31,12 @@
     </div>
     <div class="person-portrait">
       {{ with $featuredRes }}
-        <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
+        {{ $portraitKey := $.Params.person_id | default $.File.TranslationBaseName }}
+        {{ $portraitTarget := printf "img/portraits/%s%s" $portraitKey (path.Ext .Name) }}
+        {{ $portrait := resources.Copy $portraitTarget . }}
+        <img src="{{ $portrait.RelPermalink }}" alt="{{ $.Params.names.full | default $.Title }} portrait" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
       {{ else }}
-        <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
+        <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" decoding="async" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
       {{ end }}
     </div>
   </header>

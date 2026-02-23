@@ -641,3 +641,16 @@ button.danger:hover {
   opacity: 1;
   transform: translateY(0);
 }
+
+
+.relation-add-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.relation-add-row .link-button {
+  justify-self: start;
+}

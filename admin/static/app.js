@@ -495,12 +495,16 @@ function optionsForRelations(selected, opts = {}) {
   const selectedSet = new Set(selected || []);
   const exclude = opts.exclude || "";
   const allowedSex = opts.sex || null;
+  const onlySelected = !!opts.onlySelected;
+  const omitSet = new Set(opts.omit || []);
   return (state.people || [])
     .filter((p) => !exclude || p.person_id !== exclude)
+    .filter((p) => !omitSet.has(p.person_id))
     .filter((p) => {
       if (!allowedSex) return true;
       return allowedSex.includes(p.sex || "U");
     })
+    .filter((p) => !onlySelected || selectedSet.has(p.person_id))
     .map((p) => {
       const sel = selectedSet.has(p.person_id) ? "selected" : "";
       const label = p.display_name || p.title || "Unknown";
@@ -851,8 +855,12 @@ function renderPersonForm(person, mode) {
           <div class="row">
             <div>
               <label>Children</label>
-              <input type="text" class="search-input" data-filter="children" placeholder="Search people..." />
-              <select name="children" multiple size="6">${optionsForRelations(record.relations.children, { exclude: record.person_id })}</select>
+              <select name="children" multiple size="6">${optionsForRelations(record.relations.children, { exclude: record.person_id, onlySelected: true })}</select>
+              <div class="relation-add-row">
+                <input type="text" class="search-input" data-filter="children_add" placeholder="Search people to add..." />
+                <select name="children_add"><option value=""></option>${optionsForRelations([], { exclude: record.person_id, omit: record.relations.children })}</select>
+                <button type="button" class="link-button" data-add-related="children">Add</button>
+              </div>
               <div class="relation-actions">
                 <button type="button" class="link-button" data-quick-add="children">Quick Add Child</button>
                 <button type="button" class="link-button" data-remove-related="children">Remove Selected</button>
@@ -861,8 +869,12 @@ function renderPersonForm(person, mode) {
             </div>
             <div>
               <label>Siblings</label>
-              <input type="text" class="search-input" data-filter="siblings" placeholder="Search people..." />
-              <select name="siblings" multiple size="6">${optionsForRelations(record.relations.siblings, { exclude: record.person_id })}</select>
+              <select name="siblings" multiple size="6">${optionsForRelations(record.relations.siblings, { exclude: record.person_id, onlySelected: true })}</select>
+              <div class="relation-add-row">
+                <input type="text" class="search-input" data-filter="siblings_add" placeholder="Search people to add..." />
+                <select name="siblings_add"><option value=""></option>${optionsForRelations([], { exclude: record.person_id, omit: record.relations.siblings })}</select>
+                <button type="button" class="link-button" data-add-related="siblings">Add</button>
+              </div>
               <div class="relation-actions">
                 <button type="button" class="link-button" data-quick-add="siblings">Quick Add Sibling</button>
                 <button type="button" class="link-button" data-remove-related="siblings">Remove Selected</button>
@@ -1441,17 +1453,25 @@ function renderPersonForm(person, mode) {
     }
 
     const childrenSelect = form.querySelector("select[name='children']");
+    const childrenAdd = form.querySelector("select[name='children_add']");
     if (childrenSelect) {
-      const selected = Array.from(childrenSelect.selectedOptions).map((o) => o.value);
-      childrenSelect.innerHTML = optionsForRelations(selected, { exclude: record.person_id });
-      Array.from(childrenSelect.options).forEach((opt) => { opt.selected = selected.includes(opt.value); });
+      const selected = Array.from(childrenSelect.options).map((o) => o.value);
+      childrenSelect.innerHTML = optionsForRelations(selected, { exclude: record.person_id, onlySelected: true });
+      Array.from(childrenSelect.options).forEach((opt) => { opt.selected = false; });
+      if (childrenAdd) {
+        childrenAdd.innerHTML = `<option value=""></option>` + optionsForRelations([], { exclude: record.person_id, omit: selected });
+      }
     }
 
     const siblingsSelect = form.querySelector("select[name='siblings']");
+    const siblingsAdd = form.querySelector("select[name='siblings_add']");
     if (siblingsSelect) {
-      const selected = Array.from(siblingsSelect.selectedOptions).map((o) => o.value);
-      siblingsSelect.innerHTML = optionsForRelations(selected, { exclude: record.person_id });
-      Array.from(siblingsSelect.options).forEach((opt) => { opt.selected = selected.includes(opt.value); });
+      const selected = Array.from(siblingsSelect.options).map((o) => o.value);
+      siblingsSelect.innerHTML = optionsForRelations(selected, { exclude: record.person_id, onlySelected: true });
+      Array.from(siblingsSelect.options).forEach((opt) => { opt.selected = false; });
+      if (siblingsAdd) {
+        siblingsAdd.innerHTML = `<option value=""></option>` + optionsForRelations([], { exclude: record.person_id, omit: selected });
+      }
     }
 
     const eventRelated = document.getElementById("event-related");
@@ -1640,12 +1660,33 @@ function renderPersonForm(person, mode) {
       form.querySelector(`.source-row[data-index='${idx}']`)?.remove();
     }
 
+    const addRelatedBtn = target.closest("[data-add-related]");
+    if (addRelatedBtn) {
+      const field = addRelatedBtn.getAttribute("data-add-related");
+      const main = form.querySelector(`select[name='${field}']`);
+      const addSelect = form.querySelector(`select[name='${field}_add']`);
+      const val = addSelect?.value || "";
+      if (!main || !val) {
+        showNotice(`Select a ${field.slice(0, -1)} to add.`);
+        return;
+      }
+      if (!Array.from(main.options).some((o) => o.value === val)) {
+        const label = addSelect.options[addSelect.selectedIndex]?.textContent || val;
+        main.add(new Option(label, val));
+      }
+      addSelect.value = "";
+      refreshRelationSelects();
+      showNotice(`Added ${field.slice(0, -1)} link. Click Save to persist.`);
+      return;
+    }
+
     const removeRelatedBtn = target.closest("[data-remove-related]");
     if (removeRelatedBtn) {
       const field = removeRelatedBtn.getAttribute("data-remove-related");
       const select = form.querySelector(`select[name='${field}']`);
       const selected = select ? Array.from(select.selectedOptions) : [];
       selected.forEach((opt) => opt.remove());
+      refreshRelationSelects();
       showNotice(selected.length > 0 ? `Removed ${selected.length} ${field} link(s). Click Save to persist.` : `No ${field} selected.`);
       return;
     }
@@ -1658,6 +1699,7 @@ function renderPersonForm(person, mode) {
       if (select) {
         select.innerHTML = "";
       }
+      refreshRelationSelects();
       showNotice(count > 0 ? `Cleared all ${field} links. Click Save to persist.` : `No ${field} links to clear.`);
       return;
     }
@@ -1916,8 +1958,8 @@ function renderPersonForm(person, mode) {
       relations: {
         parents: { father: data.get("father"), mother: data.get("mother") },
         spouses: [],
-        children: Array.from(form.querySelector("select[name='children']")?.selectedOptions || []).map((o) => o.value),
-        siblings: Array.from(form.querySelector("select[name='siblings']")?.selectedOptions || []).map((o) => o.value),
+        children: Array.from(form.querySelector("select[name='children']")?.options || []).map((o) => o.value),
+        siblings: Array.from(form.querySelector("select[name='siblings']")?.options || []).map((o) => o.value),
       },
       media: { featured: data.get("media_featured"), gallery: [] },
       ids: {

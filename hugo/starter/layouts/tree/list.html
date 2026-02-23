@@ -24,9 +24,9 @@
           <a class="tree-main" href="{{ .RelPermalink }}">
             <div class="tree-avatar">
               {{ with $featuredRes }}
-                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
+                <img src="{{ $fallbackPortrait }}" data-real-src="{{ .RelPermalink }}" class="portrait-deferred" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
               {{ else }}
-                <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
+                <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
               {{ end }}
             </div>
             <div class="tree-main-body">
@@ -101,6 +101,42 @@
 
 <script>
 (function () {
+  const deferred = Array.from(document.querySelectorAll('img.portrait-deferred[data-real-src]'));
+  if (deferred.length) {
+    const queue = [];
+    let busy = false;
+
+    function pump() {
+      if (busy || !queue.length) return;
+      busy = true;
+      const img = queue.shift();
+      const src = img.getAttribute('data-real-src');
+      if (src) {
+        img.src = src;
+        img.removeAttribute('data-real-src');
+      }
+      setTimeout(function () {
+        busy = false;
+        pump();
+      }, 250);
+    }
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          io.unobserve(entry.target);
+          queue.push(entry.target);
+          pump();
+        });
+      }, { rootMargin: '200px 0px' });
+      deferred.forEach(function (img) { io.observe(img); });
+    } else {
+      deferred.forEach(function (img) { queue.push(img); });
+      pump();
+    }
+  }
+
   const input = document.getElementById('tree-search');
   const cards = Array.from(document.querySelectorAll('.tree-card'));
   if (!input || !cards.length) return;

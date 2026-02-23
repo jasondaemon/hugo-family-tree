@@ -20,7 +20,6 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
-- Switched family/tree portrait rendering to copy featured bundle images into `/img/portraits/<person_id>.<ext>` at build time, reducing edge security false-positives on deep `/family/.../gallery/...` asset paths while preserving fallback to `/img/male.png` or `/img/female.png`.
 - Relaxed media path validation to allow Unicode/space filenames commonly produced by screenshots, while still blocking control chars and unsafe path tokens.
 - Admin API validation error payloads are now JSON-safe (`exc.json()` based) to prevent `ValidationError` serialization failures from surfacing as HTTP 500.
 - Relationship remove actions now remove entries from the children/siblings box immediately (not just unselect), with toast feedback.

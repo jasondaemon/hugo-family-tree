@@ -4,7 +4,6 @@
   <p class="muted">Browse family records.</p>
   <div class="family-card-grid">
     {{ range .Pages.ByTitle }}
-      {{ $person := . }}
       {{ $featuredPath := "" }}
       {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
       {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
@@ -15,12 +14,9 @@
         <a class="family-card-link" href="{{ .RelPermalink }}">
           <div class="family-card-image">
             {{ with $featuredRes }}
-              {{ $portraitKey := $person.Params.person_id | default $person.File.TranslationBaseName }}
-              {{ $portraitTarget := printf "img/portraits/%s%s" $portraitKey (path.Ext .Name) }}
-              {{ $portrait := resources.Copy $portraitTarget . }}
-              <img src="{{ $portrait.RelPermalink }}" alt="{{ $person.Params.names.full | default $person.Title }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
+              <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
             {{ else }}
-              <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
+              <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
             {{ end }}
           </div>
           <div class="family-card-body">

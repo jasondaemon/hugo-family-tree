@@ -28,6 +28,7 @@ SRC_ROOT = Path(os.getenv("SRC_ROOT", "/src"))
 CONTENT_ROOT = SRC_ROOT / "content" / "family"
 GLOBAL_EVENTS_ROOT = SRC_ROOT / "content" / "global-events"
 STATIC_DIR = Path(__file__).parent / "static"
+STARTER_ROOT = Path(__file__).parent / "hugo" / "starter"
 BUILD_ENDPOINT = os.getenv("BUILD_ENDPOINT", "http://hugo-builder:19000/build")
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://example.com")
 ALLOW_UNSAFE_THEME_URLS = os.getenv("ALLOW_UNSAFE_THEME_URLS", "false").lower() == "true"
@@ -149,121 +150,34 @@ def _write_or_update(path: Path, content: str, changed: list[str]) -> None:
     changed.append(str(path))
 
 
-def _theme_css(theme_id: str) -> str:
-    if theme_id == "ledger-modern":
-        return """:root {
-  --bg: #f3efe9;
-  --ink: #1f1f1f;
-  --accent: #8a3c2f;
-  --panel: #ffffff;
-  --line: #d9d1c6;
-}
-* { box-sizing: border-box; }
-body { margin: 0; font-family: "Merriweather", Georgia, serif; color: var(--ink); background: linear-gradient(180deg, #f8f5f0 0%, #efe8dd 100%); }
-.site-header { padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
-.site-header h1 { margin: 0 0 8px; letter-spacing: 0.3px; }
-.site-header a { color: var(--accent); text-decoration: none; font-weight: 700; }
-.container { max-width: 980px; margin: 28px auto; padding: 0 22px; }
-ul { line-height: 1.8; }
-"""
+def _starter_text(rel_path: str) -> str:
+    path = STARTER_ROOT / rel_path
+    if not path.exists():
+        raise HTTPException(500, f"missing starter asset: {rel_path}")
+    return path.read_text(encoding="utf-8")
 
-    return """:root {
-  --bg: #f6f2ea;
-  --ink: #2a2420;
-  --accent: #355c7d;
-  --panel: #fffaf2;
-  --line: #e0d8cf;
-}
-* { box-sizing: border-box; }
-body { margin: 0; font-family: Georgia, serif; color: var(--ink); background: var(--bg); }
-.site-header { padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
-.site-header h1 { margin: 0 0 8px; }
-.site-header a { color: var(--accent); text-decoration: none; }
-.container { max-width: 900px; margin: 24px auto; padding: 0 20px; }
-ul { line-height: 1.7; }
-"""
+
+def _theme_css(theme_id: str) -> str:
+    return _starter_text(f"themes/{theme_id}/site.css")
 
 
 def _managed_files(theme_id: str) -> dict[str, str]:
     return {
-        "layouts/_default/baseof.html": """<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ if .Title }}{{ .Title }} | {{ end }}{{ .Site.Title }}</title>
-  <link rel="stylesheet" href="/site.css">
-</head>
-<body>
-  <header class="site-header">
-    <h1><a href="/">{{ .Site.Title }}</a></h1>
-    <nav><a href="/family/">Family</a></nav>
-  </header>
-  <main class="container">
-    {{ block "main" . }}{{ end }}
-  </main>
-</body>
-</html>
-""",
-        "layouts/index.html": """{{ define "main" }}
-<h2>Welcome</h2>
-<p>Your family tree site is initialized.</p>
-<p><a href="/family/">Browse family records</a></p>
-{{ end }}
-""",
-        "layouts/_default/single.html": """{{ define "main" }}
-<article>
-  <h2>{{ .Title }}</h2>
-  {{ .Content }}
-</article>
-{{ end }}
-""",
-        "layouts/_default/list.html": """{{ define "main" }}
-<h2>{{ .Title }}</h2>
-<ul>
-  {{ range .Pages.ByTitle }}
-  <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
-  {{ end }}
-</ul>
-{{ end }}
-""",
-        "layouts/_default/taxonomy.html": """{{ define "main" }}
-<h2>{{ .Title }}</h2>
-<ul>
-  {{ range .Pages.ByTitle }}
-  <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
-  {{ end }}
-</ul>
-{{ end }}
-""",
-        "layouts/_default/terms.html": """{{ define "main" }}
-<h2>{{ .Title }}</h2>
-<ul>
-  {{ range .Data.Terms.Alphabetical }}
-  <li><a href="{{ .Page.RelPermalink }}">{{ .Page.Title }}</a> ({{ .Count }})</li>
-  {{ end }}
-</ul>
-{{ end }}
-""",
+        "layouts/_default/baseof.html": _starter_text("layouts/_default/baseof.html"),
+        "layouts/index.html": _starter_text("layouts/index.html"),
+        "layouts/_default/single.html": _starter_text("layouts/_default/single.html"),
+        "layouts/_default/list.html": _starter_text("layouts/_default/list.html"),
+        "layouts/_default/taxonomy.html": _starter_text("layouts/_default/taxonomy.html"),
+        "layouts/_default/terms.html": _starter_text("layouts/_default/terms.html"),
+        "layouts/family/list.html": _starter_text("layouts/family/list.html"),
+        "layouts/family/single.html": _starter_text("layouts/family/single.html"),
+        "layouts/global-events/list.html": _starter_text("layouts/global-events/list.html"),
+        "layouts/tree/list.html": _starter_text("layouts/tree/list.html"),
         "static/site.css": _theme_css(theme_id),
-        "content/_index.md": """---
-title: "Home"
----
-
-Welcome to your initialized Hugo Family Tree site.
-""",
-        "content/family/_index.md": """---
-title: "Family"
----
-
-Family records live here.
-""",
-        "content/global-events/_index.md": """---
-title: "Global Events"
----
-
-Global historical events live here.
-""",
+        "content/_index.md": _starter_text("content/_index.md"),
+        "content/family/_index.md": _starter_text("content/family/_index.md"),
+        "content/global-events/_index.md": _starter_text("content/global-events/_index.md"),
+        "content/tree/_index.md": _starter_text("content/tree/_index.md"),
     }
 
 
@@ -657,6 +571,45 @@ def _ensure_bundle_dir(person_id: str, slug: str | None = None) -> Path:
     return bundle_dir
 
 
+
+
+def _normalize_partial_date_for_sort(value: str) -> str:
+    value = (value or "").strip()
+    if not value:
+        return "9999-99-99"
+    if re.match(r"^\d{4}$", value):
+        return f"{value}-99-99"
+    if re.match(r"^\d{4}-\d{2}$", value):
+        return f"{value}-99"
+    return value
+
+
+def _sort_timeline_entries(entries: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+    rows = [dict(item) for item in (entries or []) if isinstance(item, dict)]
+    rows.sort(
+        key=lambda row: (
+            _normalize_partial_date_for_sort(str(row.get("start_date") or "")),
+            _normalize_partial_date_for_sort(str(row.get("end_date") or "")),
+            int(row.get("sort_weight") or 0),
+            str(row.get("title") or "").lower(),
+        )
+    )
+    return rows
+
+def _normalize_gallery_relative(path_value: str) -> str:
+    value = str(path_value or "").strip()
+    if not value:
+        return ""
+    if value.startswith("gallery/"):
+        return value
+    if value.startswith("/"):
+        return value
+    # Legacy records sometimes store featured/media filenames without gallery/ prefix.
+    if "/" not in value and "\\" not in value:
+        return f"gallery/{value}"
+    return value
+
+
 def _normalize_payload(payload: dict[str, Any], existing: dict[str, Any] | None = None) -> dict[str, Any]:
     data = dict(payload)
 
@@ -697,6 +650,22 @@ def _normalize_payload(payload: dict[str, Any], existing: dict[str, Any] | None 
         data["story_md"] = existing.get("story_md", "") if existing else ""
     if "timeline" not in data:
         data["timeline"] = existing.get("timeline", []) if existing else []
+
+    media = data.get("media") or {}
+    if isinstance(media, dict):
+        media["featured"] = _normalize_gallery_relative(media.get("featured", ""))
+        gallery = media.get("gallery") or []
+        if isinstance(gallery, list):
+            normalized_gallery: list[dict[str, Any]] = []
+            for item in gallery:
+                if isinstance(item, dict):
+                    item = dict(item)
+                    item["file"] = _normalize_gallery_relative(item.get("file", ""))
+                    normalized_gallery.append(item)
+            media["gallery"] = normalized_gallery
+        data["media"] = media
+
+    data["timeline"] = _sort_timeline_entries(data.get("timeline"))
     return data
 
 
@@ -747,6 +716,10 @@ def _prune_managed_layout_overrides(root: Path) -> list[str]:
         "layouts/_default/list.html",
         "layouts/_default/taxonomy.html",
         "layouts/_default/terms.html",
+        "layouts/family/list.html",
+        "layouts/family/single.html",
+        "layouts/global-events/list.html",
+        "layouts/tree/list.html",
         "static/site.css",
     ]
     for rel_path in to_check:
@@ -1062,6 +1035,7 @@ def api_people_list():
             "born": p["born"],
             "died": p["died"],
             "slug": p.get("slug", ""),
+            "names": p.get("names", {}),
         }
         for p in people
     ]

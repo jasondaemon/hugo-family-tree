@@ -19,7 +19,9 @@ services:
       - default
 
   admin:
-    build: ./admin
+    build:
+      context: .
+      dockerfile: admin/Dockerfile
     container_name: hugo-family-tree-admin
     restart: unless-stopped
     environment:

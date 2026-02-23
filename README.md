@@ -9,6 +9,8 @@ Hugo Family Tree is a Docker-based, GPL-3.0-only system for managing genealogy d
 - Atomic build/publish pipeline (`public_tmp` -> `public` with `public_prev` backup)
 - NFS-backed storage for durability
 - Person IDs are system-generated and hidden from users
+- Public tree explorer (`/tree`) with live search and relationship navigation
+- Startup scaffold templates are tracked in `hugo/starter/` and copied by admin setup into `/src`.
 
 ## Architecture Summary
 Services (docker-compose):
@@ -89,3 +91,17 @@ GPL-3.0-only. See `LICENSE`.
 
 ## Contributing
 See `docs/licensing.md` and `docs/developer/contribution-guide.md`.
+
+
+## Legacy Import (WordPress SQL)
+Use the importer to migrate legacy WordPress family records, posts, pages, and media into `/src`:
+
+```bash
+python3 admin/api/migrations/wp_sql_import.py \
+  --dump /Volumes/docker/website_archive/wp-family/export/dump/wp-salvage.sql \
+  --uploads /Volumes/docker/website_archive/wp-family/wordpress/wp-content/uploads \
+  --src-root /Volumes/docker/website_www.daemon.family/src \
+  --write --clean
+```
+
+Then trigger a build from admin (`/build`) or API (`POST /api/build`).

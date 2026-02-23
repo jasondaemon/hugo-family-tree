@@ -1,0 +1,326 @@
+{{ define "main" }}
+{{ $featuredPath := "" }}
+{{ with .Params.media }}
+  {{ with .featured }}
+    {{ $featuredPath = . }}
+  {{ end }}
+{{ end }}
+{{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
+
+{{ $timeline := .Params.timeline }}
+{{ $hasTimeline := gt (len $timeline) 0 }}
+
+<article class="person-page">
+  <header class="person-hero">
+    <div class="person-title-wrap">
+      <h2>{{ .Params.names.full | default .Title }}</h2>
+      <p class="person-meta">
+        <strong>BIRTH</strong>
+        {{ .Params.vitals.born | default "????" }}
+        {{ with .Params.vitals.birth_place }} • {{ . }}{{ end }}
+        <br>
+        <strong>DEATH</strong>
+        {{ .Params.vitals.died | default "????" }}
+        {{ with .Params.vitals.death_place }} • {{ . }}{{ end }}
+      </p>
+    </div>
+    <div class="person-portrait">
+      {{ with $featuredRes }}
+        <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait">
+      {{ else }}
+        <div class="portrait-placeholder">No portrait</div>
+      {{ end }}
+    </div>
+  </header>
+
+  <section class="story-block">
+    <h3>Story</h3>
+    <div class="story-content">
+      {{ with .Params.story_md }}
+        {{ . | markdownify }}
+      {{ else }}
+        {{ .Content }}
+      {{ end }}
+    </div>
+  </section>
+
+  <section class="immediate-family">
+    <h3>Immediate Family</h3>
+    <div class="family-grid">
+      <div>
+        <h4>Parents</h4>
+        <ul>
+          {{ with .Params.relations.parents.father }}
+            {{ $father := first 1 (where site.RegularPages "Params.person_id" .) }}
+            {{ with index $father 0 }}
+              <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
+            {{ else }}
+              <li>{{ . }}</li>
+            {{ end }}
+          {{ else }}<li class="muted">Unknown father</li>{{ end }}
+          {{ with .Params.relations.parents.mother }}
+            {{ $mother := first 1 (where site.RegularPages "Params.person_id" .) }}
+            {{ with index $mother 0 }}
+              <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
+            {{ else }}
+              <li>{{ . }}</li>
+            {{ end }}
+          {{ else }}<li class="muted">Unknown mother</li>{{ end }}
+        </ul>
+      </div>
+      <div>
+        <h4>Spouse(s)</h4>
+        <ul>
+          {{ range .Params.relations.spouses }}
+            {{ if .person }}
+              {{ $sp := first 1 (where site.RegularPages "Params.person_id" .person) }}
+              <li>
+                {{ with index $sp 0 }}
+                  <a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a>
+                {{ else }}
+                  {{ .person }}
+                {{ end }}
+                {{ $from := .from }}{{ $to := .to }}{{ if $from }} ({{ $from }}{{ with $to }} - {{ . }}{{ end }}){{ end }}
+              </li>
+            {{ end }}
+          {{ else }}
+            <li class="muted">None recorded</li>
+          {{ end }}
+        </ul>
+      </div>
+      <div>
+        <h4>Children</h4>
+        <ul>
+          {{ range .Params.relations.children }}
+            {{ $child := first 1 (where site.RegularPages "Params.person_id" .) }}
+            {{ with index $child 0 }}
+              <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
+            {{ else }}
+              <li>{{ . }}</li>
+            {{ end }}
+          {{ else }}
+            <li class="muted">None recorded</li>
+          {{ end }}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="mini-tree-wrap">
+    <h3>Family Tree</h3>
+    <div class="mini-tree-root">
+      <div class="mini-tree-node current">
+        <div class="node-name">{{ .Params.names.full | default .Title }}</div>
+        <div class="node-years muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</div>
+      </div>
+    </div>
+
+    <div class="mini-tree-columns">
+      <div class="mini-tree-col">
+        <h4>Parents</h4>
+        <div class="mini-tree-list">
+          {{ with .Params.relations.parents.father }}
+            {{ $father := first 1 (where site.RegularPages "Params.person_id" .) }}
+            {{ with index $father 0 }}
+              <a class="mini-tree-node link" href="{{ .RelPermalink }}">
+                <div class="node-name">{{ .Params.names.full | default .Title }}</div>
+                <div class="node-years muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</div>
+              </a>
+            {{ else }}
+              <div class="mini-tree-node"><div class="node-name">{{ . }}</div></div>
+            {{ end }}
+          {{ else }}
+            <div class="mini-tree-node muted">Unknown father</div>
+          {{ end }}
+
+          {{ with .Params.relations.parents.mother }}
+            {{ $mother := first 1 (where site.RegularPages "Params.person_id" .) }}
+            {{ with index $mother 0 }}
+              <a class="mini-tree-node link" href="{{ .RelPermalink }}">
+                <div class="node-name">{{ .Params.names.full | default .Title }}</div>
+                <div class="node-years muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</div>
+              </a>
+            {{ else }}
+              <div class="mini-tree-node"><div class="node-name">{{ . }}</div></div>
+            {{ end }}
+          {{ else }}
+            <div class="mini-tree-node muted">Unknown mother</div>
+          {{ end }}
+        </div>
+      </div>
+
+      <div class="mini-tree-col">
+        <h4>Spouses</h4>
+        <div class="mini-tree-list">
+          {{ range .Params.relations.spouses }}
+            {{ if .person }}
+              {{ $sp := first 1 (where site.RegularPages "Params.person_id" .person) }}
+              {{ with index $sp 0 }}
+                <a class="mini-tree-node link" href="{{ .RelPermalink }}">
+                  <div class="node-name">{{ .Params.names.full | default .Title }}</div>
+                  <div class="node-years muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</div>
+                </a>
+              {{ else }}
+                <div class="mini-tree-node"><div class="node-name">{{ .person }}</div></div>
+              {{ end }}
+            {{ end }}
+          {{ else }}
+            <div class="mini-tree-node muted">None recorded</div>
+          {{ end }}
+        </div>
+      </div>
+
+      <div class="mini-tree-col">
+        <h4>Children & Descendants</h4>
+        <div class="mini-tree-list descendants-list">
+          {{ range .Params.relations.children }}
+            {{ $childID := . }}
+            {{ $childPages := first 1 (where site.RegularPages "Params.person_id" $childID) }}
+            {{ with index $childPages 0 }}
+              <details class="descendant-item">
+                <summary>
+                  <span class="node-name">{{ .Params.names.full | default .Title }}</span>
+                  <span class="node-years muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</span>
+                </summary>
+                <div class="descendant-body">
+                  <a class="mini-tree-node link" href="{{ .RelPermalink }}">Open profile</a>
+
+                  <div class="descendant-group">
+                    <strong>Spouses</strong>
+                    <ul>
+                      {{ range .Params.relations.spouses }}
+                        {{ if .person }}
+                          {{ $csp := first 1 (where site.RegularPages "Params.person_id" .person) }}
+                          {{ with index $csp 0 }}
+                            <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
+                          {{ else }}
+                            <li>{{ .person }}</li>
+                          {{ end }}
+                        {{ end }}
+                      {{ else }}
+                        <li class="muted">None recorded</li>
+                      {{ end }}
+                    </ul>
+                  </div>
+
+                  <div class="descendant-group">
+                    <strong>Grandchildren</strong>
+                    <ul>
+                      {{ range .Params.relations.children }}
+                        {{ $gc := first 1 (where site.RegularPages "Params.person_id" .) }}
+                        {{ with index $gc 0 }}
+                          <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
+                        {{ else }}
+                          <li>{{ . }}</li>
+                        {{ end }}
+                      {{ else }}
+                        <li class="muted">None recorded</li>
+                      {{ end }}
+                    </ul>
+                  </div>
+                </div>
+              </details>
+            {{ else }}
+              <div class="mini-tree-node"><div class="node-name">{{ $childID }}</div></div>
+            {{ end }}
+          {{ else }}
+            <div class="mini-tree-node muted">None recorded</div>
+          {{ end }}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="timeline-wrap">
+    <h3>Timeline</h3>
+    {{ if not $hasTimeline }}
+      <p class="muted">No timeline events yet.</p>
+    {{ else }}
+      <div class="timeline-layout">
+        <div class="timeline-rail">
+          {{ range $timeline }}
+            <div class="rail-item">
+              <span class="year">{{ .start_date | default "????" }}</span>
+            </div>
+          {{ end }}
+        </div>
+
+        <div class="timeline-events">
+          {{ range $timeline }}
+            <article class="timeline-card">
+              <header>
+                <h4>{{ .title | default "Untitled Event" }}</h4>
+                <p class="muted">
+                  {{ .start_date | default "????" }}{{ with .end_date }} - {{ . }}{{ end }}
+                  {{ with .location }} • {{ . }}{{ end }}
+                  {{ with .event_type }} • {{ . }}{{ end }}
+                </p>
+              </header>
+              <div class="timeline-story">
+                {{ with .story_md }}
+                  {{ . | markdownify }}
+                {{ else }}
+                  <p class="muted">No event story provided.</p>
+                {{ end }}
+              </div>
+
+              {{ if gt (len .media) 0 }}
+                <div class="timeline-media-grid">
+                  {{ range .media }}
+                    {{ $mediaRes := $.Resources.GetMatch .file }}
+                    {{ if $mediaRes }}
+                      <figure>
+                        <img src="{{ $mediaRes.RelPermalink }}" alt="{{ .title | default "Timeline media" }}">
+                        {{ with .caption }}<figcaption>{{ . }}</figcaption>{{ end }}
+                      </figure>
+                    {{ else }}
+                      <figure>
+                        <img src="{{ .file | relURL }}" alt="{{ .title | default "Timeline media" }}">
+                        {{ with .caption }}<figcaption>{{ . }}</figcaption>{{ end }}
+                      </figure>
+                    {{ end }}
+                  {{ end }}
+                </div>
+              {{ end }}
+            </article>
+          {{ end }}
+        </div>
+
+        <aside class="timeline-side">
+          <section class="source-panel">
+            <h4>Sources</h4>
+            {{ if gt (len .Params.sources) 0 }}
+              <ul>
+                {{ range .Params.sources }}
+                  <li>
+                    <strong>{{ .title | default .key }}</strong>
+                    {{ with .url }}<br><a href="{{ . }}" target="_blank" rel="noopener">Link</a>{{ end }}
+                  </li>
+                {{ end }}
+              </ul>
+            {{ else }}
+              <p class="muted">No sources listed.</p>
+            {{ end }}
+          </section>
+
+          <section class="media-panel">
+            <h4>Gallery</h4>
+            {{ with .Params.media.gallery }}
+              <div class="gallery-rail">
+                {{ range . }}
+                  {{ $g := $.Resources.GetMatch .file }}
+                  {{ if $g }}
+                    <img src="{{ $g.RelPermalink }}" alt="{{ .title | default "Gallery image" }}">
+                  {{ end }}
+                {{ end }}
+              </div>
+            {{ else }}
+              <p class="muted">No gallery images.</p>
+            {{ end }}
+          </section>
+        </aside>
+      </div>
+    {{ end }}
+  </section>
+</article>
+{{ end }}

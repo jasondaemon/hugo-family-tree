@@ -1,0 +1,18 @@
+{{ define "main" }}
+<section class="person-page">
+  <h2>{{ .Title }}</h2>
+  <p class="muted">Global history events for cross-family context.</p>
+
+  <div class="timeline-events">
+    {{ range .Pages.ByParam "start_date" }}
+      <article class="timeline-card">
+        <h3>{{ .Title }}</h3>
+        <p class="muted">{{ .Params.start_date | default "????" }}{{ with .Params.end_date }} - {{ . }}{{ end }}{{ with .Params.location }} • {{ . }}{{ end }}</p>
+        {{ with .Params.story_md }}{{ . | markdownify }}{{ else }}{{ .Content }}{{ end }}
+      </article>
+    {{ else }}
+      <p class="muted">No global events yet.</p>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

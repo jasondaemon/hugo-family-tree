@@ -1,0 +1,30 @@
+{{ define "main" }}
+<section class="person-page">
+  <h2>Welcome</h2>
+  <p>Family history, timelines, and stories in one place.</p>
+
+  <section class="story-block">
+    <h3>Explore</h3>
+    <ul>
+      <li><a href="/family/">Browse Family Records</a></li>
+      <li><a href="/tree/">Walk The Family Tree</a></li>
+      <li><a href="/global-events/">View Global Events</a></li>
+      <li><a href="/posts/">Read Posts</a></li>
+    </ul>
+  </section>
+
+  <section class="story-block">
+    <h3>Latest Posts</h3>
+    {{ $posts := where site.RegularPages "Section" "posts" }}
+    {{ range first 2 ($posts.ByDate.Reverse) }}
+      <article class="timeline-card">
+        <h4><a href="{{ .RelPermalink }}">{{ .Title }}</a></h4>
+        <p class="muted">{{ .Date.Format "Jan 2, 2006" }}</p>
+        {{ with .Summary }}<p>{{ . }}</p>{{ end }}
+      </article>
+    {{ else }}
+      <p class="muted">No posts yet.</p>
+    {{ end }}
+  </section>
+</section>
+{{ end }}

@@ -3,7 +3,7 @@
 - `admin/` - FastAPI admin service and static UI assets.
 - `builder/` - FastAPI build orchestrator with Hugo binary.
 - `nginx/` - Public nginx configuration.
-- `hugo/` - Optional theme or template helpers.
+- `hugo/starter/` - Tracked starter layouts/content/theme assets used by admin site initialization.
 - `src/` - Hugo content source (NFS-backed, gitignored).
 - `public/` - Published site output (NFS-backed, gitignored).
 - `public_tmp/` - Build staging output (NFS-backed, gitignored).

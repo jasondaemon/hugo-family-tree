@@ -1,0 +1,30 @@
+{{ define "main" }}
+<section class="family-list-page">
+  <h2>{{ .Title }}</h2>
+  <p class="muted">Browse family records.</p>
+  <div class="family-card-grid">
+    {{ range .Pages.ByTitle }}
+      {{ $featuredPath := "" }}
+      {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
+      {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
+      <article class="family-card">
+        <a class="family-card-link" href="{{ .RelPermalink }}">
+          <div class="family-card-image">
+            {{ with $featuredRes }}
+              <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait">
+            {{ else }}
+              <div class="portrait-placeholder">No portrait</div>
+            {{ end }}
+          </div>
+          <div class="family-card-body">
+            <h3>{{ .Params.names.full | default .Title }}</h3>
+            <p class="muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</p>
+          </div>
+        </a>
+      </article>
+    {{ else }}
+      <p class="muted">No family records yet.</p>
+    {{ end }}
+  </div>
+</section>
+{{ end }}

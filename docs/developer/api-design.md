@@ -50,6 +50,7 @@
   - `selectable = "false"` means reference-only links for discovery.
   - `installable = "true"` means the allowlisted repository can be installed into `/src/themes`.
 - `POST /api/setup` - initialize missing Hugo files, optional `{ "theme_id": "..." }`.
+  - Copies tracked scaffold assets from `hugo/starter/` into `/src` (idempotent for missing files).
 - `POST /api/setup/theme` - apply/update starter theme assets and marker.
 - `POST /api/setup/theme/install` - clone or update an allowlisted external theme and set Hugo `theme`.
   - Request body: `{ "theme_id": "papermod-reference", "ref": "optional-tag-or-branch" }`

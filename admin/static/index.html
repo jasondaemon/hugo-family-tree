@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Family Tree Admin</title>
     <link rel="stylesheet" href="/static/app.css" />
+    <link rel="stylesheet" href="/static/vendor/toastui-editor/toastui-editor.min.css" />
+    <link rel="stylesheet" href="/static/vendor/toastui-editor/plugins/toastui-editor-plugin-color-syntax.min.css" />
+    <link rel="stylesheet" href="/static/vendor/tui-color-picker/tui-color-picker.min.css" />
   </head>
   <body>
     <header class="topbar">
@@ -12,7 +15,6 @@
       <nav class="nav">
         <a href="/">Home</a>
         <a href="/people">People</a>
-        <a href="/people/new">New Person</a>
         <a href="/build">Build</a>
       </nav>
     </header>
@@ -21,6 +23,10 @@
       Loading...
     </main>
 
+    <script src="/static/vendor/toastui-editor/toastui-editor-all.min.js"></script>
+    <script src="/static/vendor/tui-color-picker/tui-color-picker.min.js"></script>
+    <script src="/static/vendor/toastui-editor/plugins/toastui-editor-plugin-color-syntax.min.js"></script>
+    <script src="/static/vendor/toastui-editor/plugins/toastui-editor-plugin-table-merged-cell.min.js"></script>
     <script src="/static/app.js"></script>
   </body>
 </html>

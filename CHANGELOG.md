@@ -7,6 +7,9 @@ The format is based on Keep a Changelog and this project follows semantic versio
 ## [Unreleased]
 
 ### Added
+- Added WordPress SQL importer (`admin/api/migrations/wp_sql_import.py`) for people, posts, pages, and bundle media migration into canonical Hugo content.
+- Added Story WYSIWYG editor in admin using Toast UI Editor (stores Markdown in `story_md`); includes raw textarea fallback if CDN asset is unavailable.
+- Added `THIRD_PARTY.md` to track externally sourced libraries used by the project.
 - Added canonical global events schema and API surface (`/api/global-events`, `/api/schema/global-event`).
 - Added person `story_md` and structured `timeline[]` support in canonical person schema.
 - Added builder `cleanup_warnings` in build responses for non-fatal cleanup issues.
@@ -17,6 +20,27 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Admin setup/seed now sources canonical scaffold files from tracked assets under `hugo/starter/` instead of inline strings.
+- Admin container build now uses repo-root context and packages `hugo/starter/` for runtime seeding.
+- Starter scaffold now includes Stage 3 templates/content (family pages, timeline layouts, tree explorer, and tree index).
+
+- Admin API now normalizes legacy bare media filenames (`featured.jpg`, `photo.png`) to `gallery/...` on save to prevent validation failures.
+- Added vendored `tui-color-picker` dependency and explicit `colorSyntax` toolbar item so text color control is visible in Story WYSIWYG.
+- Added Toast UI color-syntax and table-merged-cell plugins for richer Story WYSIWYG formatting (text color + extended table editing).
+- Story/gallery/portrait image uploads now auto-create the person record on first upload when `person_id` does not yet exist.
+- Story WYSIWYG now supports bundled image upload via editor image hook (`/api/people/{person_id}/media`, kind `gallery`).
+- Added story editor height control (resizable via slider) in admin UI.
+- Switched Story editor assets from external CDN references to vendored local static files to avoid CSP/proxy blocking.
+- Admin person editor now uses a tabbed layout (Identity, Story, Events, Sources, Gallery, Advanced) to reduce page length and improve navigation.
+- Events now use a single editor + date-ordered list workflow (create/save/select/edit/delete) instead of expanding multiple inline cards.
+- Admin person editor now supports per-event multi-image media rows and event image uploads into each person bundle gallery.
+- Clarified person media UX with a dedicated primary portrait/featured upload field (used for tree cards and featured display).
+- Admin person editor now separates **Story**, **Events**, and **Gallery** sections to match the planned schema workflow.
+- Added person timeline event editor UI with add/remove actions, event story fields, optional event image path/caption, and related-people/source refs support.
+- Event entries are now sorted by date on save and rendered in a date-ordered summary list in the editor.
+- Person save now refreshes edit view after update so the timeline immediately reflects sorted order.
+- Person payload normalization in admin API now sorts `timeline[]` consistently before validation/write.
+
 - Admin API now includes dedicated global-events CRUD endpoints for public timeline architecture.
 - Builder now treats `TMP_DIR` as a base mount and uses a managed child temp root:
   - `/public_tmp/hugo-family-tree`
@@ -30,6 +54,10 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Theme installer hardened with stricter directory sanitization (`[a-z0-9_-]`).
 - Theme installer now blocks arbitrary repo URLs unless:
   - `ALLOW_UNSAFE_THEME_URLS=true`
+
+- Added a dedicated public `/tree/` explorer page with live search and quick relationship navigation cards.
+- Enhanced person-page mini tree styling and descendant expand/collapse affordances for easier navigation.
+- Improved tree page mobile behavior (single-column cards + non-sticky search header on small screens).
 
 ### Documentation
 - Updated docs for public-repo exposure hygiene and runtime-content git ignore policy.

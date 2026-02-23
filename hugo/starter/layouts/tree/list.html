@@ -73,13 +73,14 @@
 
   let raw = [];
   try {
-    raw = JSON.parse(dataEl?.textContent || '[]');
+    const parsed = JSON.parse(dataEl?.textContent || '[]');
+    raw = Array.isArray(parsed) ? parsed : Object.values(parsed || {});
   } catch (_err) {
     setStatus('Could not read tree data.');
     return;
   }
 
-  const byId = new Map(raw.map((p) => [String(p.id || ''), p]));
+  const byId = new Map(raw.map((p) => [String((p || {}).id || ''), p]));
   const idSet = new Set(byId.keys());
 
   const unique = (arr) => [...new Set(arr)];

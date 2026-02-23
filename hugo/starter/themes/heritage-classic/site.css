@@ -265,11 +265,18 @@ body {
 
 .family-card-body {
   padding: 10px 12px;
+  text-align: center;
 }
 
 .family-card-body h3 {
   margin: 0 0 4px;
   font-size: 1.1rem;
+}
+
+.family-card-body .muted {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+  letter-spacing: 0.01em;
 }
 
 @media (max-width: 1024px) {

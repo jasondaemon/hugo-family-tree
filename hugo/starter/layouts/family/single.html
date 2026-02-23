@@ -31,7 +31,7 @@
     </div>
     <div class="person-portrait">
       {{ with $featuredRes }}
-        <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait">
+        <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
       {{ else }}
         <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
       {{ end }}

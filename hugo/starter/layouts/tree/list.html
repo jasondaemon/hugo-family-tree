@@ -24,7 +24,7 @@
           <a class="tree-main" href="{{ .RelPermalink }}">
             <div class="tree-avatar">
               {{ with $featuredRes }}
-                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
+                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
               {{ else }}
                 <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
               {{ end }}

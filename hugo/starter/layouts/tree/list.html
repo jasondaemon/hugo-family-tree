@@ -1,122 +1,173 @@
 {{ define "main" }}
-<section class="family-tree-page">
-  <header class="tree-header">
-    <h2>{{ .Title }}</h2>
-    <p class="muted">Walk the family tree by opening any person profile or expanding their immediate links.</p>
-    <label class="tree-search-label" for="tree-search">Find in tree</label>
-    <input id="tree-search" class="tree-search" type="search" placeholder="Search by name or year...">
-    <p class="tree-help muted">Showing people cards with quick parent/spouse/children navigation.</p>
-  </header>
-
-  <div class="tree-grid" id="tree-grid">
-    {{ range site.RegularPages.ByTitle }}
-      {{ if eq .Section "family" }}
-        {{ $featuredPath := "" }}
-        {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
-        {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
+{{ $people := slice }}
+{{ range site.RegularPages.ByTitle }}
+  {{ if eq .Section "family" }}
+    {{ $personID := printf "%v" (.Params.person_id | default "") }}
+    {{ if ne $personID "" }}
+      {{ $featuredPath := "" }}
+      {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
+      {{ $featuredRes := cond (ne $featuredPath "") (.Resources.GetMatch $featuredPath) nil }}
       {{ $sex := .Params.sex | default "U" }}
       {{ $fallbackPortrait := "/img/male.png" }}
       {{ if eq $sex "F" }}{{ $fallbackPortrait = "/img/female.png" }}{{ end }}
-        {{ $full := .Params.names.full | default .Title }}
-        {{ $born := .Params.vitals.born | default "????" }}
-        {{ $died := .Params.vitals.died | default "????" }}
-        <article class="tree-card" data-tree-search="{{ lower $full }} {{ lower (.Params.names.surname | default "") }} {{ $born }} {{ $died }}">
-          <a class="tree-main" href="{{ .RelPermalink }}">
-            <div class="tree-avatar">
-              {{ with $featuredRes }}
-                <img src="{{ .RelPermalink }}" alt="{{ $full }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
-              {{ else }}
-                <img src="{{ $fallbackPortrait }}" alt="{{ $full }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
-              {{ end }}
-            </div>
-            <div class="tree-main-body">
-              <h3>{{ $full }}</h3>
-              <p class="muted">{{ $born }} - {{ $died }}</p>
-            </div>
-          </a>
+      {{ $avatar := $fallbackPortrait }}
+      {{ with $featuredRes }}{{ $avatar = .RelPermalink }}{{ end }}
 
-          <div class="tree-links">
-            <div class="tree-link-group">
-              <strong>Parents</strong>
-              <ul>
-                {{ with .Params.relations.parents.father }}
-                  {{ $p := first 1 (where site.RegularPages "Params.person_id" .) }}
-                  {{ with index $p 0 }}
-                    <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
-                  {{ else }}
-                    <li class="muted">Unknown</li>
-                  {{ end }}
-                {{ else }}<li class="muted">Unknown</li>{{ end }}
-                {{ with .Params.relations.parents.mother }}
-                  {{ $p := first 1 (where site.RegularPages "Params.person_id" .) }}
-                  {{ with index $p 0 }}
-                    <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
-                  {{ else }}
-                    <li class="muted">Unknown</li>
-                  {{ end }}
-                {{ else }}<li class="muted">Unknown</li>{{ end }}
-              </ul>
-            </div>
-
-            <div class="tree-link-group">
-              <strong>Spouses</strong>
-              <ul>
-                {{ range .Params.relations.spouses }}
-                  {{ if .person }}
-                    {{ $sp := first 1 (where site.RegularPages "Params.person_id" .person) }}
-                    {{ with index $sp 0 }}
-                      <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
-                    {{ else }}
-                      <li class="muted">Unknown</li>
-                    {{ end }}
-                  {{ end }}
-                {{ else }}
-                  <li class="muted">None recorded</li>
-                {{ end }}
-              </ul>
-            </div>
-
-            <div class="tree-link-group">
-              <strong>Children</strong>
-              <ul>
-                {{ range .Params.relations.children }}
-                  {{ $c := first 1 (where site.RegularPages "Params.person_id" .) }}
-                  {{ with index $c 0 }}
-                    <li><a href="{{ .RelPermalink }}">{{ .Params.names.full | default .Title }}</a></li>
-                  {{ else }}
-                    <li class="muted">Unknown</li>
-                  {{ end }}
-                {{ else }}
-                  <li class="muted">None recorded</li>
-                {{ end }}
-              </ul>
-            </div>
-          </div>
-        </article>
+      {{ $spouses := slice }}
+      {{ range (.Params.relations.spouses | default (slice)) }}
+        {{ if .person }}{{ $spouses = $spouses | append (printf "%v" .person) }}{{ end }}
       {{ end }}
+
+      {{ $entry := dict
+        "id" $personID
+        "data" (dict
+          "fullName" (.Params.names.full | default .Title)
+          "surname" (.Params.names.surname | default "")
+          "born" (.Params.vitals.born | default "????")
+          "died" (.Params.vitals.died | default "????")
+          "gender" $sex
+          "avatar" $avatar
+          "profile" .RelPermalink
+        )
+        "rels" (dict
+          "father" (printf "%v" (.Params.relations.parents.father | default ""))
+          "mother" (printf "%v" (.Params.relations.parents.mother | default ""))
+          "spouses" $spouses
+          "children" (.Params.relations.children | default (slice))
+        )
+      }}
+      {{ $people = $people | append $entry }}
     {{ end }}
-  </div>
-  <p id="tree-empty" class="tree-empty muted" hidden>No matching people found.</p>
+  {{ end }}
+{{ end }}
+
+<section class="family-tree-page">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/family-chart@0.9.18/dist/styles/family-chart.css">
+
+  <header class="tree-header">
+    <h2>{{ .Title }}</h2>
+    <p class="muted">Interactive tree powered by Family Chart. Click a card to open that person profile.</p>
+    <label class="tree-search-label" for="tree-search">Find in tree</label>
+    <input id="tree-search" class="tree-search" type="search" placeholder="Search by name, surname, or year...">
+    <div id="tree-search-results" class="tree-search-results" aria-live="polite"></div>
+  </header>
+
+  <div id="tree-status" class="tree-status muted" hidden></div>
+  <div id="family-chart-root" class="family-chart-root"></div>
+  <script id="tree-people-data" type="application/json">{{ $people | jsonify }}</script>
 </section>
 
-<script>
-(function () {
-  const input = document.getElementById('tree-search');
-  const cards = Array.from(document.querySelectorAll('.tree-card'));
-  if (!input || !cards.length) return;
+<script type="module">
+(async () => {
+  const status = document.getElementById('tree-status');
+  const root = document.getElementById('family-chart-root');
+  const dataEl = document.getElementById('tree-people-data');
+  const searchInput = document.getElementById('tree-search');
+  const results = document.getElementById('tree-search-results');
 
-  input.addEventListener('input', function () {
-    const q = (input.value || '').trim().toLowerCase();
-    let visible = 0;
-    cards.forEach((card) => {
-      const hay = card.getAttribute('data-tree-search') || '';
-      const show = !q || hay.includes(q);
-      card.style.display = show ? '' : 'none';
-      if (show) visible += 1;
-    });
-    const empty = document.getElementById('tree-empty');
-    if (empty) empty.hidden = visible !== 0;
+  function setStatus(msg) {
+    if (!status) return;
+    status.hidden = !msg;
+    status.textContent = msg || '';
+  }
+
+  let raw = [];
+  try {
+    raw = JSON.parse(dataEl?.textContent || '[]');
+  } catch (_err) {
+    setStatus('Could not read tree data.');
+    return;
+  }
+
+  const byId = new Map(raw.map((p) => [String(p.id || ''), p]));
+  const idSet = new Set(byId.keys());
+
+  const unique = (arr) => [...new Set(arr)];
+  const clean = raw.map((p) => {
+    const id = String(p.id || '');
+    const rels = p.rels || {};
+    const father = String(rels.father || '');
+    const mother = String(rels.mother || '');
+    return {
+      ...p,
+      id,
+      rels: {
+        father: idSet.has(father) && father !== id ? father : '',
+        mother: idSet.has(mother) && mother !== id ? mother : '',
+        spouses: unique((rels.spouses || []).map((x) => String(x || '')).filter((x) => idSet.has(x) && x !== id)),
+        children: unique((rels.children || []).map((x) => String(x || '')).filter((x) => idSet.has(x) && x !== id)),
+      },
+    };
   });
+
+  if (!clean.length) {
+    setStatus('No family records available yet.');
+    return;
+  }
+
+  if (searchInput && results) {
+    const renderResults = () => {
+      const q = (searchInput.value || '').trim().toLowerCase();
+      if (!q) {
+        results.innerHTML = '';
+        return;
+      }
+      const matches = clean
+        .filter((p) => {
+          const d = p.data || {};
+          const hay = `${d.fullName || ''} ${d.surname || ''} ${d.born || ''} ${d.died || ''}`.toLowerCase();
+          return hay.includes(q);
+        })
+        .slice(0, 12);
+
+      results.innerHTML = matches.length
+        ? matches
+            .map((p) => {
+              const d = p.data || {};
+              const label = `${d.fullName || 'Unknown'} (${d.born || '????'}-${d.died || '????'})`;
+              return `<a class="tree-search-result" href="${d.profile || '#'}">${label}</a>`;
+            })
+            .join('')
+        : '<span class="muted">No matches.</span>';
+    };
+
+    searchInput.addEventListener('input', renderResults);
+  }
+
+  try {
+    const f3 = await import('https://cdn.jsdelivr.net/npm/family-chart@0.9.18/+esm');
+    const chart = f3.createChart('#family-chart-root', clean).setTransitionTime(700);
+    const card = chart
+      .setCardHtml()
+      .setStyle('imageRect')
+      .setCardImageField('avatar')
+      .setCardDisplay([
+        ['fullName'],
+        ['born', 'died'],
+      ])
+      .setMiniTree(true);
+
+    if (typeof card.setOnCardClick === 'function') {
+      card.setOnCardClick((event, node) => {
+        const id = String(node?.id || '');
+        const profile = byId.get(id)?.data?.profile || '';
+        if (profile) {
+          window.location.href = profile;
+          return;
+        }
+        if (typeof card.onCardClickDefault === 'function') {
+          card.onCardClickDefault(event, node);
+        }
+      });
+    }
+
+    chart.updateTree({ initial: true });
+    setStatus('');
+  } catch (err) {
+    console.error(err);
+    setStatus('Could not load interactive tree library.');
+    if (root) root.innerHTML = '';
+  }
 })();
 </script>
 {{ end }}

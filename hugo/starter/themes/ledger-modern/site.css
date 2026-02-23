@@ -524,6 +524,37 @@ body {
   gap: 12px;
 }
 
+
+.family-chart-root {
+  margin-top: 12px;
+  min-height: 74vh;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.tree-status {
+  margin-top: 10px;
+}
+
+.tree-search-results {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.tree-search-result {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.tree-search-result:hover {
+  text-decoration: underline;
+}
+
 .tree-empty {
   margin-top: 12px;
   font-style: italic;

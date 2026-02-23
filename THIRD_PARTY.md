@@ -32,3 +32,10 @@ This project includes or references the following third-party components.
   - Upstream: [https://github.com/nhn/tui.color-picker](https://github.com/nhn/tui.color-picker)
   - Vendored under: `admin/static/vendor/tui-color-picker/`
   - License: MIT
+
+## Public Tree UI
+- **Family Chart** (`family-chart`)
+  - Purpose: interactive, navigable public family tree rendering on `/tree/`.
+  - Source: [https://github.com/donatso/family-chart](https://github.com/donatso/family-chart)
+  - Loaded from CDN at runtime (not vendored): `https://cdn.jsdelivr.net/npm/family-chart@0.9.18/`
+  - License: MIT

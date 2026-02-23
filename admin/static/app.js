@@ -1010,14 +1010,8 @@ function renderPersonForm(person, mode) {
   const noticeBox = document.getElementById("notice-box");
 
   function showNotice(message) {
-    if (!noticeBox) return;
-    noticeBox.textContent = message;
-    noticeBox.hidden = false;
-    setTimeout(() => {
-      if (noticeBox.textContent === message) {
-        noticeBox.hidden = true;
-      }
-    }, 3200);
+    if (noticeBox) noticeBox.hidden = true;
+    showToast(message);
   }
 
   const deleteBtn = document.getElementById("delete-person");
@@ -1592,13 +1586,9 @@ function renderPersonForm(person, mode) {
     if (removeRelatedBtn) {
       const field = removeRelatedBtn.getAttribute("data-remove-related");
       const select = form.querySelector(`select[name='${field}']`);
-      const before = select ? Array.from(select.selectedOptions).length : 0;
-      if (select) {
-        Array.from(select.selectedOptions).forEach((opt) => {
-          opt.selected = false;
-        });
-      }
-      showNotice(before > 0 ? `Removed ${before} ${field} link(s). Click Save to persist.` : `No ${field} selected.`);
+      const selected = select ? Array.from(select.selectedOptions) : [];
+      selected.forEach((opt) => opt.remove());
+      showNotice(selected.length > 0 ? `Removed ${selected.length} ${field} link(s). Click Save to persist.` : `No ${field} selected.`);
       return;
     }
 
@@ -1606,14 +1596,11 @@ function renderPersonForm(person, mode) {
     if (clearRelatedBtn) {
       const field = clearRelatedBtn.getAttribute("data-clear-related");
       const select = form.querySelector(`select[name='${field}']`);
-      let count = 0;
+      const count = select ? Array.from(select.options).length : 0;
       if (select) {
-        Array.from(select.options).forEach((opt) => {
-          if (opt.selected) count += 1;
-          opt.selected = false;
-        });
+        select.innerHTML = "";
       }
-      showNotice(count > 0 ? `Cleared all selected ${field}. Click Save to persist.` : `No ${field} selected.`);
+      showNotice(count > 0 ? `Cleared all ${field} links. Click Save to persist.` : `No ${field} links to clear.`);
       return;
     }
 
@@ -1944,14 +1931,7 @@ function renderPersonForm(person, mode) {
         localStorage.removeItem(draftKey);
         const refreshed = await fetchJson(`/api/people/${encodeURIComponent(saved.person_id || record.person_id)}`);
         renderPersonForm(refreshed.person, "edit");
-        const freshNotice = document.getElementById("notice-box");
-        if (freshNotice) {
-          freshNotice.textContent = "Record saved.";
-          freshNotice.hidden = false;
-          setTimeout(() => {
-            if (freshNotice.textContent === "Record saved.") freshNotice.hidden = true;
-          }, 3200);
-        }
+        showNotice("Record saved.");
       } else {
         const created = await fetchJson("/people", {
           method: "POST",

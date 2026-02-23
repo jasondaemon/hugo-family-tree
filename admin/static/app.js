@@ -271,9 +271,15 @@ function personSidebarLabel(person) {
 }
 
 function renderPeopleList() {
+  const notice = sessionStorage.getItem("people_notice") || "";
+  if (notice) {
+    sessionStorage.removeItem("people_notice");
+  }
+
   layout(`
     <h2>People</h2>
     <p class="muted">Use the left sidebar to search and open a person record.</p>
+    ${notice ? `<div class="notice-box">${escapeHtml(notice)}</div>` : ""}
   `);
 
   mountPeopleWorkspace("list");
@@ -772,13 +778,21 @@ function renderPersonForm(person, mode) {
               <label>Children</label>
               <input type="text" class="search-input" data-filter="children" placeholder="Search people..." />
               <select name="children" multiple size="6">${optionsForRelations(record.relations.children, { exclude: record.person_id })}</select>
-              <button type="button" class="link-button" data-quick-add="children">Quick Add Child</button>
+              <div class="relation-actions">
+                <button type="button" class="link-button" data-quick-add="children">Quick Add Child</button>
+                <button type="button" class="link-button" data-remove-related="children">Remove Selected</button>
+                <button type="button" class="link-button" data-clear-related="children">Clear All</button>
+              </div>
             </div>
             <div>
               <label>Siblings</label>
               <input type="text" class="search-input" data-filter="siblings" placeholder="Search people..." />
               <select name="siblings" multiple size="6">${optionsForRelations(record.relations.siblings, { exclude: record.person_id })}</select>
-              <button type="button" class="link-button" data-quick-add="siblings">Quick Add Sibling</button>
+              <div class="relation-actions">
+                <button type="button" class="link-button" data-quick-add="siblings">Quick Add Sibling</button>
+                <button type="button" class="link-button" data-remove-related="siblings">Remove Selected</button>
+                <button type="button" class="link-button" data-clear-related="siblings">Clear All</button>
+              </div>
             </div>
           </div>
           <div class="subsection" id="spouse-rows">
@@ -967,6 +981,7 @@ function renderPersonForm(person, mode) {
       <div class="actions">
         <button type="submit">${isEdit ? "Save" : "Create"}</button>
         <a href="/people"><button type="button" class="secondary">Back</button></a>
+        ${isEdit ? '<button type="button" class="danger" id="delete-person">Delete Person</button>' : ''}
       </div>
     </form>
   `);
@@ -986,6 +1001,23 @@ function renderPersonForm(person, mode) {
         noticeBox.hidden = true;
       }
     }, 3200);
+  }
+
+  const deleteBtn = document.getElementById("delete-person");
+  if (deleteBtn && isEdit && record.person_id) {
+    deleteBtn.addEventListener("click", async () => {
+      const ok = window.confirm("Delete this person record? This will remove relationship references from other records. This cannot be undone.");
+      if (!ok) return;
+      try {
+        await fetchJson(`/people/${encodeURIComponent(record.person_id)}`, { method: "DELETE" });
+        localStorage.removeItem(draftKey);
+        sessionStorage.setItem("people_notice", "Person deleted.");
+        window.location.href = "/people";
+      } catch (err) {
+        errorBox.hidden = false;
+        errorBox.textContent = err.message || "Failed to delete person.";
+      }
+    });
   }
 
   const timelineStateInput = document.getElementById("timeline-state");
@@ -1536,6 +1568,28 @@ function renderPersonForm(person, mode) {
     if (target.matches("[data-remove-source]")) {
       const idx = target.getAttribute("data-remove-source");
       form.querySelector(`.source-row[data-index='${idx}']`)?.remove();
+    }
+
+    if (target.matches("[data-remove-related]")) {
+      const field = target.getAttribute("data-remove-related");
+      const select = form.querySelector(`select[name='${field}']`);
+      if (select) {
+        Array.from(select.selectedOptions).forEach((opt) => {
+          opt.selected = false;
+        });
+      }
+      return;
+    }
+
+    if (target.matches("[data-clear-related]")) {
+      const field = target.getAttribute("data-clear-related");
+      const select = form.querySelector(`select[name='${field}']`);
+      if (select) {
+        Array.from(select.options).forEach((opt) => {
+          opt.selected = false;
+        });
+      }
+      return;
     }
 
     if (target.matches("[data-quick-add]")) {

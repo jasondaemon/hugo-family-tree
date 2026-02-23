@@ -20,6 +20,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Added relationship management controls for children/siblings in admin UI (`Remove Selected`, `Clear All`).
+- Added person delete endpoint and admin UI action to delete a person record and scrub relationship references across people/global-events.
 - Admin setup/seed now sources canonical scaffold files from tracked assets under `hugo/starter/` instead of inline strings.
 - Admin container build now uses repo-root context and packages `hugo/starter/` for runtime seeding.
 - Starter scaffold now includes Stage 3 templates/content (family pages, timeline layouts, tree explorer, and tree index).

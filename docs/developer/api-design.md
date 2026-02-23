@@ -38,6 +38,7 @@
 - `GET /api/people/by-slug/{slug}` - load a person record by slug/alias.
 - `POST /people` - create a new person bundle (UUID assigned server-side).
 - `PUT /people/{person_id}` - update an existing record.
+- `DELETE /people/{person_id}` - delete person bundle and scrub relationship references in other records.
 - `POST /api/people/{person_id}/media` - upload media into the bundle gallery.
 - `GET /api/global-events` - list/search global historical events.
 - `GET /api/global-events/{slug}` - load one global event.

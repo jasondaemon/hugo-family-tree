@@ -551,3 +551,19 @@ button.secondary {
 .people-content {
   min-width: 0;
 }
+
+
+.relation-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+button.danger {
+  background: #b23b3b;
+}
+
+button.danger:hover {
+  background: #982f2f;
+}

@@ -571,6 +571,78 @@ def _ensure_bundle_dir(person_id: str, slug: str | None = None) -> Path:
     return bundle_dir
 
 
+def _remove_person_refs_in_people(removed_person_id: str) -> int:
+    updated = 0
+    if not CONTENT_ROOT.exists():
+        return updated
+
+    for md in CONTENT_ROOT.rglob("index.md"):
+        data, body = _read_person(md)
+        data = _normalize_payload(data)
+        changed = False
+
+        rel = data.get("relations") or {}
+        parents = rel.get("parents") or {}
+        if parents.get("father") == removed_person_id:
+            parents["father"] = ""
+            changed = True
+        if parents.get("mother") == removed_person_id:
+            parents["mother"] = ""
+            changed = True
+
+        spouses = rel.get("spouses") or []
+        filtered_spouses = [sp for sp in spouses if str((sp or {}).get("person") or "") != removed_person_id]
+        if len(filtered_spouses) != len(spouses):
+            rel["spouses"] = filtered_spouses
+            changed = True
+
+        children = rel.get("children") or []
+        filtered_children = [cid for cid in children if str(cid or "") != removed_person_id]
+        if len(filtered_children) != len(children):
+            rel["children"] = filtered_children
+            changed = True
+
+        siblings = rel.get("siblings") or []
+        filtered_siblings = [sid for sid in siblings if str(sid or "") != removed_person_id]
+        if len(filtered_siblings) != len(siblings):
+            rel["siblings"] = filtered_siblings
+            changed = True
+
+        timeline = data.get("timeline") or []
+        for event in timeline:
+            if not isinstance(event, dict):
+                continue
+            related = event.get("related_people") or []
+            filtered_related = [x for x in related if str(x or "") != removed_person_id]
+            if len(filtered_related) != len(related):
+                event["related_people"] = filtered_related
+                changed = True
+
+        if changed:
+            _write_person(md, data, body)
+            updated += 1
+
+    return updated
+
+
+def _remove_person_refs_in_global_events(removed_person_id: str) -> int:
+    updated = 0
+    if not GLOBAL_EVENTS_ROOT.exists():
+        return updated
+
+    for md in GLOBAL_EVENTS_ROOT.rglob("index.md"):
+        data, body = _read_person(md)
+        related = data.get("related_people") or []
+        filtered_related = [x for x in related if str(x or "") != removed_person_id]
+        if len(filtered_related) == len(related):
+            continue
+        data["related_people"] = filtered_related
+        _write_person(md, data, body)
+        updated += 1
+
+    return updated
+
+
 
 
 def _normalize_partial_date_for_sort(value: str) -> str:
@@ -1196,6 +1268,38 @@ async def api_update_person(person_id: str, request: Request):
     _write_person(path, record.model_dump(by_alias=True), body)
 
     return {"ok": True, "person_id": record.person_id, "slug": record.slug, "warnings": warnings}
+
+
+@app.delete("/people/{person_id}")
+@app.delete("/api/people/{person_id}")
+def api_delete_person(person_id: str):
+    path = _find_person_path(person_id)
+    if not path or not path.exists():
+        raise HTTPException(404, f"Person not found: {person_id}")
+
+    bundle_dir = path.parent
+    person_data, _body = _read_person(path)
+
+    try:
+        shutil.rmtree(bundle_dir)
+    except Exception as exc:
+        raise HTTPException(500, f"Failed to delete bundle: {exc}")
+
+    people_updated = _remove_person_refs_in_people(person_id)
+    global_events_updated = _remove_person_refs_in_global_events(person_id)
+
+    return {
+        "ok": True,
+        "deleted": {
+            "person_id": person_id,
+            "slug": person_data.get("slug", ""),
+            "bundle": str(bundle_dir.relative_to(SRC_ROOT)),
+        },
+        "cleaned_references": {
+            "people_records": people_updated,
+            "global_events": global_events_updated,
+        },
+    }
 
 
 @app.post("/api/people/{person_id}/media")

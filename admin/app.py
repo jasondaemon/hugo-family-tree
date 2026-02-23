@@ -378,6 +378,32 @@ def _slugify(value: str) -> str:
     return value.strip("-")
 
 
+def _last_name_token(value: str) -> str:
+    parts = re.findall(r"[A-Za-z0-9'\-]+", str(value or ""))
+    return parts[-1].lower() if parts else ""
+
+
+def _person_filter_tags(data: dict[str, Any]) -> list[str]:
+    names = data.get("names") or {}
+    tags: list[str] = []
+
+    for raw in [
+        names.get("surname", ""),
+        names.get("maiden", ""),
+        *list(names.get("married", []) or []),
+    ]:
+        token = _last_name_token(str(raw or ""))
+        if token:
+            tags.append(token)
+
+    for raw in list(data.get("tags", []) or []):
+        token = _slugify(str(raw or "").replace("_", " "))
+        if token:
+            tags.append(token)
+
+    return sorted(set(tags))
+
+
 def _slug_hash(person_id: str) -> str:
     return hashlib.sha1(person_id.encode("utf-8")).hexdigest()[:8]
 
@@ -420,8 +446,11 @@ def _list_people() -> list[dict[str, Any]]:
                     "full": names.get("full", ""),
                     "given": names.get("given", ""),
                     "surname": names.get("surname", ""),
+                    "maiden": names.get("maiden", ""),
+                    "married": names.get("married", []) or [],
                     "also_known_as": names.get("also_known_as", []) or [],
                 },
+                "tags": _person_filter_tags(data),
                 "path": str(md.relative_to(SRC_ROOT)),
                 "dir_name": md.parent.name,
             }
@@ -715,6 +744,7 @@ def _normalize_payload(payload: dict[str, Any], existing: dict[str, Any] | None 
             base = _slugify(data.get("names", {}).get("full", "")) if data.get("names") else ""
             data["slug"] = base or f"person-{uuid.uuid4().hex[:8]}"
     data.setdefault("aliases", [])
+    data.setdefault("tags", [])
     data.setdefault("names", {})
     data.setdefault("vitals", {})
     data.setdefault("relations", {})
@@ -742,6 +772,13 @@ def _normalize_payload(payload: dict[str, Any], existing: dict[str, Any] | None 
             media["gallery"] = normalized_gallery
         data["media"] = media
 
+    names = data.get("names") or {}
+    if isinstance(names, dict):
+        names.setdefault("married", [])
+        names.setdefault("also_known_as", [])
+        data["names"] = names
+
+    data["tags"] = [str(t).strip() for t in (data.get("tags") or []) if str(t).strip()]
     data["timeline"] = _sort_timeline_entries(data.get("timeline"))
     return data
 
@@ -1133,7 +1170,10 @@ def api_people_search(q: str = ""):
             q in (names.get("full", "").lower())
             or q in (names.get("given", "").lower())
             or q in (names.get("surname", "").lower())
+            or q in (names.get("maiden", "").lower())
+            or any(q in m.lower() for m in (names.get("married", []) or []))
             or any(q in aka.lower() for aka in (names.get("also_known_as", []) or []))
+            or any(q in t.lower() for t in (p.get("tags", []) or []))
         )
 
     results = [p for p in people if match(p)]
@@ -1151,7 +1191,10 @@ def api_people(query: str | None = None):
             if q in (p["names"].get("full", "").lower())
             or q in (p["names"].get("given", "").lower())
             or q in (p["names"].get("surname", "").lower())
+            or q in (p["names"].get("maiden", "").lower())
+            or any(q in m.lower() for m in (p["names"].get("married", []) or []))
             or any(q in aka.lower() for aka in (p["names"].get("also_known_as", []) or []))
+            or any(q in t.lower() for t in (p.get("tags", []) or []))
         ]
     return {"ok": True, "people": people}
 

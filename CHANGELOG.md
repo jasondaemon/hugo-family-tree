@@ -20,6 +20,10 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Person schema and admin editor now support married names (`names.married[]`) and custom person tags (`tags[]`) for surname/tag-based discovery.
+- People search APIs now match on married names, maiden names, and custom tags in addition to full/given/surname/AKA.
+- Family page now includes a consumer-style filter bar with searchable chips and text search over parsed surname tags + custom tags.
+
 - Family card typography refined: centered name/date text and enabled tabular lining numerals for date rows to improve visual alignment and readability.
 - Relaxed media path validation to allow Unicode/space filenames commonly produced by screenshots, while still blocking control chars and unsafe path tokens.
 - Admin API validation error payloads are now JSON-safe (`exc.json()` based) to prevent `ValidationError` serialization failures from surfacing as HTTP 500.
@@ -68,6 +72,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Improved tree page mobile behavior (single-column cards + non-sticky search header on small screens).
 
 ### Documentation
+- Updated `/docs/schema/person.md` to document married-name fields, custom tags, and public family surname-tag filtering behavior.
+
 - Updated docs for public-repo exposure hygiene and runtime-content git ignore policy.
 - Added `docs/schema/global-events.md` for timeline/global event model contract.
 - Updated `README.md` build pipeline notes for managed temp root and same-filesystem requirement.

@@ -374,6 +374,7 @@ function ensureDefaults(person) {
     person_id: "",
     slug: "",
     aliases: [],
+    tags: [],
     names: {
       full: "",
       given: "",
@@ -381,6 +382,7 @@ function ensureDefaults(person) {
       surname: "",
       suffix: "",
       maiden: "",
+      married: [],
       also_known_as: [],
     },
     sex: "U",
@@ -738,7 +740,11 @@ function renderPersonForm(person, mode) {
           <div class="row-3">
             <div><label>Suffix</label><input type="text" name="names_suffix" value="${escapeHtml(record.names.suffix)}" /></div>
             <div><label>Maiden</label><input type="text" name="names_maiden" value="${escapeHtml(record.names.maiden)}" /></div>
+            <div><label>Married Names (one per line)</label><textarea name="names_married">${escapeHtml(listToTextarea(record.names.married))}</textarea></div>
+          </div>
+          <div class="row">
             <div><label>Also Known As (one per line)</label><textarea name="names_aka">${escapeHtml(listToTextarea(record.names.also_known_as))}</textarea></div>
+            <div><label>Tags (one per line)</label><textarea name="tags">${escapeHtml(listToTextarea(record.tags))}</textarea></div>
           </div>
           <div class="row">
             <div>
@@ -1842,8 +1848,10 @@ function renderPersonForm(person, mode) {
         surname: data.get("names_surname"),
         suffix: data.get("names_suffix"),
         maiden: data.get("names_maiden"),
+        married: textareaToList(data.get("names_married")),
         also_known_as: textareaToList(data.get("names_aka")),
       },
+      tags: textareaToList(data.get("tags")),
       sex: data.get("sex"),
       vitals: {
         born: data.get("vitals_born"),

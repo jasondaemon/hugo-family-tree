@@ -57,6 +57,7 @@ def _map_legacy(data: dict[str, Any], path: Path, mapping: dict[str, str]) -> di
     names.setdefault("surname", surname)
     names.setdefault("suffix", data.get("suffix", ""))
     names.setdefault("maiden", data.get("maiden", ""))
+    names.setdefault("married", data.get("married", []) or data.get("married_names", []) or [])
     names.setdefault("also_known_as", data.get("also_known_as", []) or data.get("aka", []) or [])
 
     vitals = data.get("vitals") or {}
@@ -116,6 +117,7 @@ def _map_legacy(data: dict[str, Any], path: Path, mapping: dict[str, str]) -> di
     provenance = data.get("provenance") or {}
 
     aliases = data.get("aliases", []) or []
+    tags = data.get("tags", []) or []
     if original_slug and original_slug not in aliases and original_slug != person_id:
         aliases.append(original_slug)
 
@@ -126,6 +128,7 @@ def _map_legacy(data: dict[str, Any], path: Path, mapping: dict[str, str]) -> di
         "person_id": person_id,
         "slug": data.get("slug", original_slug if original_slug != person_id else ""),
         "aliases": aliases,
+        "tags": tags,
         "names": names,
         "sex": data.get("sex", data.get("gender", "U")) or "U",
         "vitals": vitals,

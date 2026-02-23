@@ -2,7 +2,16 @@
 <section class="family-list-page">
   <h2>{{ .Title }}</h2>
   <p class="muted">Browse family records.</p>
-  <div class="family-card-grid">
+
+  <section class="family-filters" aria-label="Family filters">
+    <div class="family-filter-input-wrap">
+      <label for="family-filter-input">Find by name, surname, or tag</label>
+      <input id="family-filter-input" class="family-filter-input" type="search" placeholder="Try Bates, Towson, military..." autocomplete="off">
+    </div>
+    <div id="family-filter-chips" class="family-filter-chips" aria-live="polite"></div>
+  </section>
+
+  <div id="family-card-grid" class="family-card-grid">
     {{ range .Pages.ByTitle }}
       {{ $featuredPath := "" }}
       {{ with .Params.media }}{{ with .featured }}{{ $featuredPath = . }}{{ end }}{{ end }}
@@ -10,18 +19,56 @@
       {{ $sex := .Params.sex | default "U" }}
       {{ $fallbackPortrait := "/img/male.png" }}
       {{ if eq $sex "F" }}{{ $fallbackPortrait = "/img/female.png" }}{{ end }}
-      <article class="family-card">
+
+      {{ $names := .Params.names }}
+      {{ $surname := lower (trim (printf "%v" ($names.surname | default "")) " ") }}
+      {{ $maiden := lower (trim (printf "%v" ($names.maiden | default "")) " ") }}
+      {{ $married := $names.married | default (slice) }}
+      {{ $customTags := .Params.tags | default (slice) }}
+      {{ $filterTags := slice }}
+      {{ if ne $surname "" }}
+        {{ $surnameParts := findRE "[^\\s]+" $surname }}
+        {{ if gt (len $surnameParts) 0 }}
+          {{ $filterTags = $filterTags | append (index $surnameParts (sub (len $surnameParts) 1)) }}
+        {{ end }}
+      {{ end }}
+      {{ if ne $maiden "" }}
+        {{ $maidenParts := findRE "[^\\s]+" $maiden }}
+        {{ if gt (len $maidenParts) 0 }}
+          {{ $filterTags = $filterTags | append (index $maidenParts (sub (len $maidenParts) 1)) }}
+        {{ end }}
+      {{ end }}
+      {{ range $married }}
+        {{ $m := lower (trim (printf "%v" .) " ") }}
+        {{ if ne $m "" }}
+          {{ $mParts := findRE "[^\\s]+" $m }}
+          {{ if gt (len $mParts) 0 }}
+            {{ $filterTags = $filterTags | append (index $mParts (sub (len $mParts) 1)) }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+      {{ range $customTags }}
+        {{ $t := lower (urlize (printf "%v" .)) }}
+        {{ if ne $t "" }}{{ $filterTags = $filterTags | append $t }}{{ end }}
+      {{ end }}
+      {{ $tags := uniq $filterTags }}
+      {{ $fullName := .Params.names.full | default .Title }}
+      {{ $born := .Params.vitals.born | default "????" }}
+      {{ $died := .Params.vitals.died | default "????" }}
+      {{ $searchText := lower (printf "%s %s %s %s %s" $fullName $surname $maiden $born $died) }}
+
+      <article class="family-card" data-family-card data-tags="{{ delimit $tags "|" }}" data-search="{{ $searchText }}">
         <a class="family-card-link" href="{{ .RelPermalink }}">
           <div class="family-card-image">
             {{ with $featuredRes }}
-              <img src="{{ .RelPermalink }}" alt="{{ $.Title }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
+              <img src="{{ .RelPermalink }}" alt="{{ $fullName }} portrait" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='{{ $fallbackPortrait }}'">
             {{ else }}
-              <img src="{{ $fallbackPortrait }}" alt="{{ .Params.names.full | default .Title }} portrait" onerror="this.onerror=null;this.src=this.src.replace(/\.png$/,'.jpg')">
+              <img src="{{ $fallbackPortrait }}" alt="{{ $fullName }} portrait">
             {{ end }}
           </div>
           <div class="family-card-body">
-            <h3>{{ .Params.names.full | default .Title }}</h3>
-            <p class="muted">{{ .Params.vitals.born | default "????" }} - {{ .Params.vitals.died | default "????" }}</p>
+            <h3>{{ $fullName }}</h3>
+            <p class="muted">{{ $born }} - {{ $died }}</p>
           </div>
         </a>
       </article>
@@ -30,4 +77,58 @@
     {{ end }}
   </div>
 </section>
+
+<script>
+(() => {
+  const cards = Array.from(document.querySelectorAll('[data-family-card]'));
+  const input = document.getElementById('family-filter-input');
+  const chipsWrap = document.getElementById('family-filter-chips');
+  if (!cards.length || !input || !chipsWrap) return;
+
+  const tagCounts = new Map();
+  cards.forEach((card) => {
+    const tags = (card.dataset.tags || '').split('|').map((x) => x.trim()).filter(Boolean);
+    tags.forEach((tag) => tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1));
+  });
+
+  const topTags = [...tagCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 18);
+
+  let activeTag = '';
+
+  function buildChips() {
+    const allActive = activeTag === '' ? 'active' : '';
+    chipsWrap.innerHTML = `<button type="button" class="family-chip ${allActive}" data-chip="">All</button>` +
+      topTags.map(([tag, count]) => {
+        const active = activeTag === tag ? 'active' : '';
+        return `<button type="button" class="family-chip ${active}" data-chip="${tag}">${tag} <span>${count}</span></button>`;
+      }).join('');
+
+    chipsWrap.querySelectorAll('[data-chip]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const next = btn.getAttribute('data-chip') || '';
+        activeTag = activeTag === next ? '' : next;
+        buildChips();
+        applyFilter();
+      });
+    });
+  }
+
+  function applyFilter() {
+    const q = (input.value || '').trim().toLowerCase();
+    const terms = q ? q.split(/\s+/).filter(Boolean) : [];
+    cards.forEach((card) => {
+      const search = (card.dataset.search || '').toLowerCase();
+      const tags = (card.dataset.tags || '').split('|').map((x) => x.trim()).filter(Boolean);
+      const tagMatch = !activeTag || tags.includes(activeTag);
+      const textMatch = terms.length === 0 || terms.every((term) => search.includes(term) || tags.some((tag) => tag.includes(term)));
+      card.style.display = tagMatch && textMatch ? '' : 'none';
+    });
+  }
+
+  input.addEventListener('input', applyFilter);
+  buildChips();
+})();
+</script>
 {{ end }}

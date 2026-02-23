@@ -39,6 +39,7 @@ class Names(BaseModel):
     surname: str = ""
     suffix: str = ""
     maiden: str = ""
+    married: List[str] = Field(default_factory=list)
     also_known_as: List[str] = Field(default_factory=list)
 
 
@@ -183,6 +184,7 @@ class PersonRecord(BaseModel):
     person_id: str
     slug: str = ""
     aliases: List[str] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
     names: Names = Field(default_factory=Names)
     sex: str = "U"
     vitals: Vitals = Field(default_factory=Vitals)

@@ -89,7 +89,7 @@ def _run(cmd: list[str], cwd: Path) -> str:
 
 def _rsync(src: Path, dst: Path) -> str:
     dst.mkdir(parents=True, exist_ok=True)
-    return _run(["rsync", "-a", "--delete", f"{src}/", f"{dst}/"], cwd=src)
+    return _run(["rsync", "-a", "--delete", "--chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r", f"{src}/", f"{dst}/"], cwd=src)
 
 
 def _safe_rmtree(path: Path, logs: list[str], warnings: list[str], context: str) -> None:

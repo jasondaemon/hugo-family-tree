@@ -20,6 +20,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Builder publish rsync now enforces web-safe file permissions (`u=rwX,go=rX`) to prevent static assets (e.g. `/site.css`) being published unreadable and served as 403/HTML fallback.
+
 - Replaced legacy `/tree/` card grid with a Family Chart (`family-chart`) interactive tree view, including click-through profile navigation and quick text match links.
 
 - Polished children/siblings add-link controls with tighter responsive layout (search + picker + add action in one compact row on desktop).

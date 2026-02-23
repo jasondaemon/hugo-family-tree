@@ -1570,25 +1570,32 @@ function renderPersonForm(person, mode) {
       form.querySelector(`.source-row[data-index='${idx}']`)?.remove();
     }
 
-    if (target.matches("[data-remove-related]")) {
-      const field = target.getAttribute("data-remove-related");
+    const removeRelatedBtn = target.closest("[data-remove-related]");
+    if (removeRelatedBtn) {
+      const field = removeRelatedBtn.getAttribute("data-remove-related");
       const select = form.querySelector(`select[name='${field}']`);
+      const before = select ? Array.from(select.selectedOptions).length : 0;
       if (select) {
         Array.from(select.selectedOptions).forEach((opt) => {
           opt.selected = false;
         });
       }
+      showNotice(before > 0 ? `Removed ${before} ${field} link(s). Click Save to persist.` : `No ${field} selected.`);
       return;
     }
 
-    if (target.matches("[data-clear-related]")) {
-      const field = target.getAttribute("data-clear-related");
+    const clearRelatedBtn = target.closest("[data-clear-related]");
+    if (clearRelatedBtn) {
+      const field = clearRelatedBtn.getAttribute("data-clear-related");
       const select = form.querySelector(`select[name='${field}']`);
+      let count = 0;
       if (select) {
         Array.from(select.options).forEach((opt) => {
+          if (opt.selected) count += 1;
           opt.selected = false;
         });
       }
+      showNotice(count > 0 ? `Cleared all selected ${field}. Click Save to persist.` : `No ${field} selected.`);
       return;
     }
 

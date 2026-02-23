@@ -333,7 +333,7 @@ function buildPeopleSidebar(activeKey = "") {
   const topTags = [...tagCounts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 16)
-    .map(([tag, count]) => `<button type="button" class="people-tag" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)} <span>${count}</span></button>`)
+    .map(([tag, count]) => `<a href="#" class="people-tag-link" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)} <span>${count}</span></a>`)
     .join("");
 
   return `
@@ -342,7 +342,7 @@ function buildPeopleSidebar(activeKey = "") {
       <div class="people-filter-wrap">
         <input id="people-nav-filter" type="search" placeholder="Filter name or tag..." autocomplete="off" />
         <div id="people-tag-cloud" class="people-tag-cloud">
-          <button type="button" class="people-tag active" data-tag="">all</button>
+          <a href="#" class="people-tag-link active" data-tag="">all</a>
           ${topTags}
         </div>
       </div>
@@ -375,7 +375,7 @@ function mountPeopleWorkspace(activeKey = "") {
 
   const filterInput = document.getElementById("people-nav-filter");
   const links = Array.from(document.querySelectorAll("#people-nav-links .people-nav-link"));
-  const tagButtons = Array.from(document.querySelectorAll("#people-tag-cloud .people-tag"));
+  const tagButtons = Array.from(document.querySelectorAll("#people-tag-cloud .people-tag-link"));
   let activeTag = "";
 
   function applyPeopleFilter() {
@@ -396,13 +396,19 @@ function mountPeopleWorkspace(activeKey = "") {
   }
 
   tagButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tag = btn.getAttribute("data-tag") || "";
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      const tag = (btn.getAttribute("data-tag") || "").toLowerCase();
       activeTag = activeTag === tag ? "" : tag;
-      tagButtons.forEach((b) => b.classList.toggle("active", (b.getAttribute("data-tag") || "") === activeTag || (activeTag === "" && (b.getAttribute("data-tag") || "") === "")));
+      tagButtons.forEach((b) => {
+        const bt = (b.getAttribute("data-tag") || "").toLowerCase();
+        b.classList.toggle("active", bt === activeTag || (activeTag === "" && bt === ""));
+      });
       applyPeopleFilter();
     });
   });
+
+  applyPeopleFilter();
 }
 
 

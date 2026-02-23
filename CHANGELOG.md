@@ -20,6 +20,8 @@ The format is based on Keep a Changelog and this project follows semantic versio
 - Added troubleshooting guidance for NFS `EBUSY` behavior in builder temp directories.
 
 ### Changed
+- Corrected Family Chart CDN/module sources to published endpoints (`jsdelivr` CSS + `esm.sh` module, `family-chart@0.8.0`) to prevent `/tree` dynamic import 404 failures.
+
 - Hardened `/tree` data bootstrap for Family Chart: JSON payload is now normalized to an array before `map()` to avoid runtime failures when Hugo emits object-shaped JSON.
 
 - Builder publish rsync now enforces web-safe file permissions (`u=rwX,go=rX`) to prevent static assets (e.g. `/site.css`) being published unreadable and served as 403/HTML fallback.

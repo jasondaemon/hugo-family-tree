@@ -37,5 +37,5 @@ This project includes or references the following third-party components.
 - **Family Chart** (`family-chart`)
   - Purpose: interactive, navigable public family tree rendering on `/tree/`.
   - Source: [https://github.com/donatso/family-chart](https://github.com/donatso/family-chart)
-  - Loaded from CDN at runtime (not vendored): `https://cdn.jsdelivr.net/npm/family-chart@0.9.18/`
+  - Loaded from CDN at runtime (not vendored): `https://cdn.jsdelivr.net/npm/family-chart@0.8.0/ + https://esm.sh/family-chart@0.8.0`
   - License: MIT

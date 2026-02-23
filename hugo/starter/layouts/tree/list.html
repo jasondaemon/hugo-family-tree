@@ -42,7 +42,7 @@
 {{ end }}
 
 <section class="family-tree-page">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/family-chart@0.9.18/dist/styles/family-chart.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/family-chart@0.8.0/dist/styles/family-chart.css">
 
   <header class="tree-header">
     <h2>{{ .Title }}</h2>
@@ -136,7 +136,7 @@
   }
 
   try {
-    const f3 = await import('https://cdn.jsdelivr.net/npm/family-chart@0.9.18/+esm');
+    const f3 = await import('https://esm.sh/family-chart@0.8.0');
     const chart = f3.createChart('#family-chart-root', clean).setTransitionTime(700);
     const card = chart
       .setCardHtml()
